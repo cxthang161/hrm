@@ -8,10 +8,11 @@
         public string Phone { get; set; }
         public string Email { get; set; }
         public string Sex { get; set; }
-        public int SalaryLevel { get; set; }
+        public int SalaryId { get; set; }
         public int DepartmentId { get; set; }
 
         public Department Department { get; set; }
         public Salaries Salary { get; set; }
+        public ICollection<Position> EmployeePositions { get; set; }
     }
 }

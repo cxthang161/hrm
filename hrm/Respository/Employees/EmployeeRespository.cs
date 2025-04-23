@@ -12,40 +12,57 @@ namespace hrm.Respository.Employees
 
         public async Task<IEnumerable<Employee>> GetAll()
         {
-            var query = @"
+            var sql = @"
                         SELECT 
-                            e.Id AS EmployeeId,
+                            e.Id,
                             e.Name,
                             e.Dob,
-                            e.Address,
                             e.Phone,
                             e.Email,
                             e.Sex,
-                            e.SalaryLevel,
+                            e.SalaryId,
                             e.DepartmentId,
-                            d.Id AS DepartmentId,
-                            d.Name AS DepartmentName,
-                            s.Id AS SalaryId,
-                            s.Salary AS SalaryAmount,
-                            s.Date AS SalaryDate
+                            d.Id,
+                            d.Name,
+                            s.Id,
+                            s.Salary,
+                            s.Date,
+                            p.Id,
+                            p.Name
                         FROM Employees e
                         JOIN Departments d ON e.DepartmentId = d.Id
-                        JOIN Salaries s ON e.SalaryLevel = s.Id";
+                        JOIN Salaries s ON e.SalaryId = s.Id
+                        LEFT JOIN EmployeePositions ep ON e.Id = ep.EmployeeId
+                        LEFT JOIN Positions p ON ep.PositionId = p.Id";
+
+            var employeeDict = new Dictionary<int, Employee>();
 
             using (var conn = _context.CreateConnection())
             {
-                var employees = await conn.QueryAsync<Employee, Department, Salaries, Employee>(
-                                query,
-                                (emp, dept, salary) =>
-                                {
-                                    emp.Department = dept;
-                                    emp.Salary = salary;
-                                    return emp;
-                                },
-                                splitOn: "DepartmentId,SalaryId"
-                            );
+                var result = await conn.QueryAsync<Employee, Department, Salaries, Position, Employee>(
+                    sql,
+                    (employee, department, salary, position) =>
+                    {
+                        if (!employeeDict.TryGetValue(employee.Id, out var empEntry))
+                        {
+                            employee.Department = department;
+                            employee.Salary = salary;
+                            employee.EmployeePositions = new List<Position>();
+                            empEntry = employee;
+                            employeeDict.Add(employee.Id, empEntry);
+                        }
 
-                return employees.ToList();
+                        if (position != null && !empEntry.EmployeePositions.Any(ep => ep.Id == position.Id))
+                        {
+                            empEntry.EmployeePositions.Add(position);
+                        }
+
+                        return empEntry;
+                    },
+                    splitOn: "Id,Id,Id"
+                );
+
+                return employeeDict.Values.ToList();
             }
         }
     }

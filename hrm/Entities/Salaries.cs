@@ -5,5 +5,6 @@
         public int Id { get; set; }
         public int Salary { get; set; }
         public DateTime Date { get; set; }
+        public ICollection<Employee> Employees { get; set; }
     }
 }
