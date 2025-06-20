@@ -16,12 +16,12 @@ namespace hrm.Respository.Users
             _context = context;
             _tokenProvider = tokenProvider;
         }
-        public async Task<string?> AuthLogin(User user)
+        public async Task<string?> AuthLogin(Entities.Users user)
         {
             using var connection = _context.CreateConnection();
             string sql = "SELECT * FROM Users WHERE UserName = @UserName AND Password = @Password";
 
-            var foundUser = await connection.QueryFirstOrDefaultAsync<User>(sql, new
+            var foundUser = await connection.QueryFirstOrDefaultAsync<Entities.Users>(sql, new
             {
                 UserName = user.UserName,
                 Password = user.Password

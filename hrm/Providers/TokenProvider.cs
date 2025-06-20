@@ -8,7 +8,7 @@ namespace hrm.Providers
 {
     public class TokenProvider(IConfiguration configuration)
     {
-        public string CreateToken(User user)
+        public string CreateToken(Users user)
         {
             string? secretKey = configuration["JWT:Secret"];
 
