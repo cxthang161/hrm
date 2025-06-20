@@ -1,9 +1,9 @@
-﻿using hrm.Entities;
+﻿using hrm.DTOs;
 
 namespace hrm.Respository.Users
 {
     public interface IUserRespository
     {
-        Task<string?> AuthLogin(LoginRequest user);
+        Task<string?> AuthLogin(UserLoginDto user);
     }
 }

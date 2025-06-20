@@ -1,4 +1,4 @@
-﻿using hrm.Entities;
+﻿using hrm.DTOs;
 using hrm.Respository.Users;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +16,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest user)
+    public async Task<IActionResult> Login([FromBody] UserLoginDto user)
     {
 
         var token = await _userRepository.AuthLogin(user);

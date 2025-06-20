@@ -1,6 +1,6 @@
 ﻿using Dapper;
 using hrm.Context;
-using hrm.Entities;
+using hrm.DTOs;
 using hrm.Providers;
 
 namespace hrm.Respository.Users
@@ -16,7 +16,7 @@ namespace hrm.Respository.Users
             _context = context;
             _tokenProvider = tokenProvider;
         }
-        public async Task<string?> AuthLogin(Entities.Users user)
+        public async Task<string?> AuthLogin(UserLoginDto user)
         {
             using var connection = _context.CreateConnection();
             string sql = "SELECT * FROM Users WHERE UserName = @UserName AND Password = @Password";

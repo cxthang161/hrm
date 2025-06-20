@@ -1,8 +1,8 @@
-﻿using System.Security.Claims;
-using System.Text;
-using hrm.Entities;
+﻿using hrm.Entities;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+using System.Text;
 
 namespace hrm.Providers
 {
@@ -26,7 +26,7 @@ namespace hrm.Providers
                     [
                         new Claim(JwtRegisteredClaimNames.Sid, user.Id.ToString()),
                         new Claim(JwtRegisteredClaimNames.Name, user.UserName),
-                        new Claim(ClaimTypes.Role, user.PositionId.ToString())
+                        new Claim(ClaimTypes.Role, user.RoleId.ToString())
                     ]
                 ),
                 Expires = DateTime.UtcNow.AddHours(configuration.GetValue<int>("JWT:Expiration")),
