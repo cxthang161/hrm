@@ -4,6 +4,6 @@ namespace hrm.Respository.Users
 {
     public interface IUserRespository
     {
-        Task<string?> AuthLogin(UserLoginDto user);
+        Task<(Entities.Users, string, string)?> AuthLogin(UserLoginDto user);
     }
 }

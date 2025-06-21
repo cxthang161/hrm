@@ -2,7 +2,6 @@ using System.Text;
 using hrm;
 using hrm.Context;
 using hrm.Providers;
-using hrm.Respository.Employees;
 using hrm.Respository.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -18,7 +17,6 @@ builder.Services.AddSwagerGenWithAuth();
 
 
 builder.Services.AddSingleton<HRMContext>();
-builder.Services.AddScoped<IEmployeeRespository, EmployeeRespository>();
 builder.Services.AddScoped<IUserRespository, UserRepository>();
 
 // Add config JWT

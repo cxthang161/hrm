@@ -16,7 +16,7 @@ namespace hrm.Respository.Users
             _context = context;
             _tokenProvider = tokenProvider;
         }
-        public async Task<string?> AuthLogin(UserLoginDto user)
+        public async Task<(Entities.Users, string, string)?> AuthLogin(UserLoginDto user)
         {
             using var connection = _context.CreateConnection();
             string sql = "SELECT * FROM Users WHERE UserName = @UserName AND Password = @Password";
@@ -32,7 +32,44 @@ namespace hrm.Respository.Users
                 return null;
             }
 
-            return _tokenProvider.CreateToken(foundUser);
+            var userSql = @"
+                            SELECT 
+                                u.Id,
+                                u.UserName,
+                                u.CreatedAt,
+
+                                r.Id,
+                                r.Name,
+
+                                a.Id,
+                                a.AgentName,
+                                a.AgentCode,
+                                a.Address,
+                                a.Phone
+                            FROM Users u 
+                            JOIN Roles r ON u.RoleId = r.Id 
+                            JOIN Agents a ON u.AgentId = a.Id
+                            WHERE u.Id = @UserId";
+
+            var result = await connection.QueryAsync<Entities.Users, Entities.Roles, Entities.Agents, Entities.Users>(
+                userSql,
+                (userEntity, role, agent) =>
+                {
+                    userEntity.Role = role;
+                    userEntity.Agent = agent;
+                    return userEntity;
+                },
+                new { UserId = foundUser.Id },
+                splitOn: "Id, Id"
+            );
+
+            var fullUser = result.FirstOrDefault();
+
+            var accessToken = _tokenProvider.CreateToken(fullUser!);
+            var refreshToken = _tokenProvider.CreateRefreshToken();
+
+            return (fullUser, accessToken, refreshToken);
         }
+
     }
 }

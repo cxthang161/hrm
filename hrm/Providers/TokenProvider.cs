@@ -1,8 +1,9 @@
-﻿using hrm.Entities;
+﻿using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using hrm.Entities;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
-using System.Text;
 
 namespace hrm.Providers
 {
@@ -31,13 +32,21 @@ namespace hrm.Providers
                 ),
                 Expires = DateTime.UtcNow.AddHours(configuration.GetValue<int>("JWT:Expiration")),
                 SigningCredentials = creds,
-                Issuer = configuration["JWT:Isser"],
+                Issuer = configuration["JWT:Issuer"],
                 Audience = configuration["JWT:Audience"]
             };
 
             var handle = new JsonWebTokenHandler();
 
             return handle.CreateToken(tokenDescriptor);
+        }
+
+        public string CreateRefreshToken()
+        {
+            var randomBytes = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+            return Convert.ToBase64String(randomBytes);
         }
     }
 }

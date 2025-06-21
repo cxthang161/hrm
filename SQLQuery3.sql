@@ -31,3 +31,11 @@ create table Configs(
 	UpdatedBy int not null foreign key references Users(Id),
 	UpdatedAt Datetime default getDate()
 )
+
+create table RefreshTokens(
+	Id int identity(1,1) not null primary key,
+	UserId int not null foreign key references Users(Id),
+	Token nvarchar(500) not null unique,
+	ExpiresAt DateTime not null,
+	CreatedAt DateTime default getDate()
+)
