@@ -1,9 +1,9 @@
-﻿using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using hrm.Entities;
+﻿using hrm.Entities;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace hrm.Providers
 {
@@ -25,8 +25,8 @@ namespace hrm.Providers
             {
                 Subject = new ClaimsIdentity(
                     [
-                        new Claim(JwtRegisteredClaimNames.Sid, user.Id.ToString()),
-                        new Claim(JwtRegisteredClaimNames.Name, user.UserName),
+                        new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sid, user.Id.ToString()),
+                        new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Name, user.UserName),
                         new Claim(ClaimTypes.Role, user.RoleId.ToString())
                     ]
                 ),
@@ -41,12 +41,41 @@ namespace hrm.Providers
             return handle.CreateToken(tokenDescriptor);
         }
 
-        public string CreateRefreshToken()
+        public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
         {
-            var randomBytes = new byte[64];
-            using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(randomBytes);
-            return Convert.ToBase64String(randomBytes);
+            var secretKey = configuration["JWT:Secret"];
+            if (string.IsNullOrEmpty(secretKey))
+            {
+                throw new ArgumentNullException("JWT:Secret is missing in configuration!");
+            }
+
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+                ValidateLifetime = false
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+
+            try
+            {
+                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var validatedToken);
+
+                if (validatedToken is not JwtSecurityToken jwtToken ||
+                    !jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return null;
+                }
+
+                return principal;
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }
