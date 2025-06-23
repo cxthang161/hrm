@@ -2,6 +2,7 @@
 using hrm.DTOs;
 using hrm.Entities;
 using hrm.Respository.Users;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [Route("api/auth")]
@@ -25,10 +26,10 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh-token")]
-    public async Task<IActionResult> ReFreshToken([FormBody] string accessToken)
-    {
-        var
-    }
+    //public async Task<IActionResult> ReFreshToken([FormBody] string accessToken)
+    //{
+    //    var
+    //}
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] UserLoginDto request)
@@ -40,7 +41,6 @@ public class AuthController : ControllerBase
         {
             return Unauthorized("Invalid username or password");
         }
-
         var response = new AuthResponse
         {
             UserInfo = new UserDto
@@ -56,5 +56,51 @@ public class AuthController : ControllerBase
         };
 
         return Ok(new BaseResponse<AuthResponse>(response, "", true));
+    }
+
+    [Authorize(Roles = "1")]
+    [HttpPost("create")]
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserDto request)
+    {
+        var result = await _userRepository.CreateUser(request);
+        return Ok(new BaseResponse<string>("", result.Item1, result.Item2));
+    }
+
+    [Authorize(Roles = "1")]
+    [HttpDelete("delete/{id}")]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        var result = await _userRepository.DeleteUser(id);
+        return Ok(new BaseResponse<string>("", result.Item1, result.Item2));
+
+    }
+
+    [Authorize(Roles = "1")]
+    [HttpPut("update/{id}")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] CreateUserDto request)
+    {
+        var result = await _userRepository.UpdateUser(id, request);
+        return Ok(new BaseResponse<string>("", result.Item1, result.Item2));
+
+    }
+
+    [Authorize(Roles = "1")]
+    [HttpGet("get-all")]
+    public async Task<IActionResult> GetAllUsers([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
+    {
+        var users = await _userRepository.GetAll(pageIndex, pageSize);
+        if (users == null || !users.Any())
+        {
+            return NotFound(new BaseResponse<IEnumerable<UserDto>>(null, "No users found", false));
+        }
+        var userDtos = users.Select(u => new UserDto
+        {
+            Id = u.Id,
+            UserName = u.UserName,
+            CreatedAt = u.CreatedAt,
+            Role = u.Role,
+            Agent = u.Agent
+        });
+        return Ok(new BaseResponse<IEnumerable<UserDto>>(userDtos, "Users retrieved successfully", true));
     }
 }
