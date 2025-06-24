@@ -28,6 +28,7 @@ create table Configs(
 	ConfigValue nvarchar(max) not null,
 	LogoUrl nvarchar(max) not null,
 	BackgroundUrl nvarchar(max) not null,
+	NameTemplate nvarchar(200) not null,
 	UpdatedBy int not null foreign key references Users(Id),
 	UpdatedAt Datetime default getDate()
 )
