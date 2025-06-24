@@ -3,14 +3,14 @@
     public class Users
     {
         public int Id { get; set; }
-        public string UserName { get; set; }
-        public string Password { get; set; }
+        public required string UserName { get; set; }
+        public required string Password { get; set; }
         public DateTime CreatedAt { get; set; }
 
-        public int RoleId { get; set; }
-        public Roles Role { get; set; }
+        public required int RoleId { get; set; }
+        public Roles? Role { get; set; }
 
-        public int AgentId { get; set; }
-        public Agents Agent { get; set; }
+        public required int AgentId { get; set; }
+        public Agents? Agent { get; set; }
     }
 }

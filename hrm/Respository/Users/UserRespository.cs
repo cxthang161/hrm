@@ -122,47 +122,53 @@ namespace hrm.Respository.Users
             return ("Deleted user successfully", true);
         }
 
-        public async Task<IEnumerable<Entities.Users>> GetAll(int pageIndex, int pageSize)
+        public async Task<(IEnumerable<Entities.Users>, int)> GetAll(int pageIndex, int pageSize)
         {
             using var connection = _context.CreateConnection();
-            const string sql = @"
-                                SELECT 
-                                    u.Id,
-                                    u.UserName,
-                                    u.CreatedAt,
 
-                                    r.Id,
-                                    r.Name,
+            const string userSql = @"
+                                    SELECT 
+                                        u.Id,
+                                        u.UserName,
+                                        u.CreatedAt,
 
-                                    a.Id,
-                                    a.AgentName,
-                                    a.AgentCode,
-                                    a.Address,
-                                    a.Phone
-                                FROM Users u 
-                                JOIN Roles r ON u.RoleId = r.Id 
-                                JOIN Agents a ON u.AgentId = a.Id
-                                ORDER BY u.CreatedAt DESC
-                                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;";
+                                        r.Id,
+                                        r.Name,
 
-            var result = await connection.QueryAsync<Entities.Users, Entities.Roles, Entities.Agents, Entities.Users>(
-                sql,
-                (userEntity, role, agent) =>
+                                        a.Id,
+                                        a.AgentName,
+                                        a.AgentCode,
+                                        a.Address,
+                                        a.Phone
+                                        FROM Users u 
+                                        JOIN Roles r ON u.RoleId = r.Id 
+                                        JOIN Agents a ON u.AgentId = a.Id
+                                        ORDER BY u.CreatedAt DESC
+                                        OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;";
+
+            var users = await connection.QueryAsync<Entities.Users, Entities.Roles, Entities.Agents, Entities.Users>(
+                userSql,
+                (user, role, agent) =>
                 {
-                    userEntity.Role = role;
-                    userEntity.Agent = agent;
-                    return userEntity;
+                    user.Role = role;
+                    user.Agent = agent;
+                    return user;
                 },
                 new
                 {
                     Offset = (pageIndex - 1) * pageSize,
                     PageSize = pageSize
                 },
-                splitOn: "Id, Id"
+                splitOn: "Id,Id"
             );
 
-            return result;
+            const string countSql = "SELECT COUNT(*) FROM Users";
+            var totalRows = await connection.ExecuteScalarAsync<int>(countSql);
+
+            return (users, totalRows);
         }
+
+
 
         public async Task<(string, bool)> UpdateUser(int userId, CreateUserDto userDto)
         {
@@ -204,6 +210,38 @@ namespace hrm.Respository.Users
 
             return ("Updated user successfully", true);
         }
+        public async Task<Entities.Users?> GetUserById(int userId)
+        {
+            using var connection = _context.CreateConnection();
+            const string userSql = @"
+                                    SELECT 
+                                        u.Id,
+                                        u.UserName,
+                                        u.CreatedAt,
+                                        r.Id,
+                                        r.Name,
+                                        a.Id,
+                                        a.AgentName,
+                                        a.AgentCode,
+                                        a.Address,
+                                        a.Phone
+                                    FROM Users u 
+                                    JOIN Roles r ON u.RoleId = r.Id 
+                                    JOIN Agents a ON u.AgentId = a.Id
+                                    WHERE u.Id = @UserId";
+            var result = await connection.QueryAsync<Entities.Users, Entities.Roles, Entities.Agents, Entities.Users>(
+                userSql,
+                (user, role, agent) =>
+                {
+                    user.Role = role;
+                    user.Agent = agent;
+                    return user;
+                },
+                new { UserId = userId },
+                splitOn: "Id, Id"
+            );
+            return result.FirstOrDefault();
 
+        }
     }
 }

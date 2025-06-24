@@ -4,6 +4,7 @@ using hrm;
 using hrm.Context;
 using hrm.Entities;
 using hrm.Providers;
+using hrm.Respository.Auth;
 using hrm.Respository.Configs;
 using hrm.Respository.Roles;
 using hrm.Respository.Users;
@@ -26,10 +27,27 @@ builder.Services.AddSingleton<HRMContext>();
 builder.Services.AddScoped<IUserRespository, UserRepository>();
 builder.Services.AddScoped<IConfigRespository, ConfigRespository>();
 builder.Services.AddScoped<IRoleRespository, RoleRespository>();
+builder.Services.AddScoped<IAuthRespository, AuthRespository>();
 
-// Add config JWT
+// Add providers
 builder.Services.AddSingleton<TokenProvider>();
 builder.Services.AddSingleton<RefreshTokenProvider>();
+builder.Services.AddSingleton<UploadFileProvider>();
+builder.Services.AddSingleton<AesCryptoProvider>();
+
+// Add CORS policy to allow frontend to access the API
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
+// Add config JWT
 builder.Services.AddAuthorization();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -58,6 +76,11 @@ builder.Services.AddSingleton(serviceProvider =>
     return new CloudinaryDotNet.Cloudinary(account);
 });
 
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(5005);
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -68,6 +91,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();

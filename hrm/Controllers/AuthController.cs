@@ -1,8 +1,8 @@
 ﻿using hrm.Common;
 using hrm.DTOs;
 using hrm.Entities;
-using hrm.Respository.Users;
-using Microsoft.AspNetCore.Authorization;
+using hrm.Providers;
+using hrm.Respository.Auth;
 using Microsoft.AspNetCore.Mvc;
 
 [Route("api/auth")]
@@ -10,97 +10,67 @@ using Microsoft.AspNetCore.Mvc;
 
 public class AuthController : ControllerBase
 {
-    private readonly IUserRespository _userRepository;
+    private readonly IAuthRespository _authRespository;
+    private readonly AesCryptoProvider _aesCryptoProvider;
 
     public class AuthResponse
     {
         public UserDto UserInfo { get; set; } = null!;
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
+        public string Permission { get; set; } = string.Empty;
     }
 
 
-    public AuthController(IUserRespository userRepository)
+    public AuthController(IAuthRespository authRespository, AesCryptoProvider aesCryptoProvider)
     {
-        _userRepository = userRepository;
+        _authRespository = authRespository;
+        _aesCryptoProvider = aesCryptoProvider;
     }
 
     [HttpPost("refresh-token")]
-    //public async Task<IActionResult> ReFreshToken([FormBody] string accessToken)
-    //{
-    //    var
-    //}
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenResponseDto request)
+    {
+        var result = await _authRespository.RefreshToken(request.AccessToken, request.RefreshToken);
+        if (result is null)
+        {
+            return Unauthorized("Invalid refresh token or access token");
+        }
+        var response = new RefreshTokenResponseDto
+        {
+            AccessToken = result.Value.Item1,
+            RefreshToken = result.Value.Item2
+        };
+
+        return Ok(new BaseResponse<RefreshTokenResponseDto>(response, "Success", true));
+
+    }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] UserLoginDto request)
     {
 
-        var userInfo = await _userRepository.AuthLogin(request);
+        var userInfo = await _authRespository.AuthLogin(request);
 
         if (userInfo is not (Users user, string accessToken, string refreshToken))
         {
             return Unauthorized("Invalid username or password");
         }
+        string permission = _aesCryptoProvider.Encrypt(user.Role.Name);
         var response = new AuthResponse
         {
             UserInfo = new UserDto
             {
                 Id = user.Id,
                 UserName = user.UserName,
-                Role = user.Role,
                 Agent = user.Agent,
                 CreatedAt = user.CreatedAt
             },
+            Permission = permission,
             AccessToken = accessToken,
             RefreshToken = refreshToken
         };
 
         return Ok(new BaseResponse<AuthResponse>(response, "", true));
-    }
-
-    [Authorize(Roles = "1")]
-    [HttpPost("create")]
-    public async Task<IActionResult> CreateUser([FromBody] CreateUserDto request)
-    {
-        var result = await _userRepository.CreateUser(request);
-        return Ok(new BaseResponse<string>("", result.Item1, result.Item2));
-    }
-
-    [Authorize(Roles = "1")]
-    [HttpDelete("delete/{id}")]
-    public async Task<IActionResult> DeleteUser(int id)
-    {
-        var result = await _userRepository.DeleteUser(id);
-        return Ok(new BaseResponse<string>("", result.Item1, result.Item2));
-
-    }
-
-    [Authorize(Roles = "1")]
-    [HttpPut("update/{id}")]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] CreateUserDto request)
-    {
-        var result = await _userRepository.UpdateUser(id, request);
-        return Ok(new BaseResponse<string>("", result.Item1, result.Item2));
-
-    }
-
-    [Authorize(Roles = "1")]
-    [HttpGet("get-all")]
-    public async Task<IActionResult> GetAllUsers([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
-    {
-        var users = await _userRepository.GetAll(pageIndex, pageSize);
-        if (users == null || !users.Any())
-        {
-            return NotFound(new BaseResponse<IEnumerable<UserDto>>(null, "No users found", false));
-        }
-        var userDtos = users.Select(u => new UserDto
-        {
-            Id = u.Id,
-            UserName = u.UserName,
-            CreatedAt = u.CreatedAt,
-            Role = u.Role,
-            Agent = u.Agent
-        });
-        return Ok(new BaseResponse<IEnumerable<UserDto>>(userDtos, "Users retrieved successfully", true));
     }
 }

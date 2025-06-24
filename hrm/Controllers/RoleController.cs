@@ -6,7 +6,7 @@ namespace hrm.Controllers
 {
     [Route("api/role")]
     [ApiController]
-    public class RoleController : Controller
+    public class RoleController : ControllerBase
     {
         private readonly IRoleRespository _roleRepository;
         public RoleController(IRoleRespository roleRepository)

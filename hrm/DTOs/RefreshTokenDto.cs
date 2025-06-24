@@ -1,13 +1,16 @@
-﻿namespace hrm.Entities
+﻿namespace hrm.DTOs
 {
-    public class RefreshTokens
+    public class RefreshTokenDto
     {
-        public int Id { get; set; }
         public required string Token { get; set; }
         public DateTime ExpiriesAt { get; set; }
         public DateTime CreatedAt { get; set; }
-
         public required int UserId { get; set; }
-        public Users? User { get; set; }
+    }
+
+    public class RefreshTokenResponseDto
+    {
+        public string? AccessToken { get; set; }
+        public string? RefreshToken { get; set; }
     }
 }

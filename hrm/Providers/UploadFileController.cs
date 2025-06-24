@@ -1,28 +1,22 @@
 ﻿using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
-using hrm.Common;
-using hrm.Respository.Configs;
-using Microsoft.AspNetCore.Mvc;
 
-namespace hrm.Controllers
+namespace hrm.Providers
 {
-    public class UploadFileController : ControllerBase
+    public class UploadFileProvider
     {
         private readonly Cloudinary _cloudinary;
-        private readonly IConfigRespository _configRepository;
 
 
-        public UploadFileController(IConfigRespository configRepository, Cloudinary cloudinary)
+        public UploadFileProvider(Cloudinary cloudinary)
         {
             _cloudinary = cloudinary;
-            _configRepository = configRepository;
         }
 
-        [HttpPost("upload-image/{id}")]
-        public async Task<IActionResult> UploadImage(int id, IFormFile file)
+        public async Task<string?> UploadImage(IFormFile? file)
         {
             if (file == null || file.Length == 0)
-                return BadRequest("No file uploaded.");
+                return null;
 
             var uploadParams = new ImageUploadParams
             {
@@ -30,19 +24,15 @@ namespace hrm.Controllers
             };
 
             var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-
             if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
             {
-                var result = await _configRepository.UploadLogo(id, uploadResult.SecureUrl.AbsoluteUri);
-                if (result == null)
-                {
-                    return NotFound("Configuration not found.");
-                }
-                return Ok(new BaseResponse<string>("", "Upload file successfully", true));
+                return (uploadResult.SecureUrl.AbsoluteUri + "," + uploadResult.PublicId);
             }
 
-            return StatusCode(500, "Failed to upload image.");
+            return null;
         }
+
+
 
         //[HttpPost("delete-image/{id}")]
         //public async Task<IActionResult> DeleteImage(int id)
