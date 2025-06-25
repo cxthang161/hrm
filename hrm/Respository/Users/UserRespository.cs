@@ -1,84 +1,27 @@
 ﻿using Dapper;
 using hrm.Context;
 using hrm.DTOs;
-using hrm.Providers;
 
 namespace hrm.Respository.Users
 {
     public class UserRepository : IUserRespository
     {
         private readonly HRMContext _context;
-        private readonly TokenProvider _tokenProvider;
-        private readonly RefreshTokenProvider _refreshTokenProvider;
+        private readonly IConfiguration _configuration;
 
-
-        public UserRepository(HRMContext context, TokenProvider tokenProvider, RefreshTokenProvider refreshTokenProvider)
+        public UserRepository(HRMContext context, IConfiguration configuration)
         {
             _context = context;
-            _tokenProvider = tokenProvider;
-            _refreshTokenProvider = refreshTokenProvider;
-        }
-        public async Task<(Entities.Users, string, string)?> AuthLogin(UserLoginDto user)
-        {
-            using var connection = _context.CreateConnection();
-            string sql = "SELECT * FROM Users WHERE UserName = @UserName";
-
-            var foundUser = await connection.QueryFirstOrDefaultAsync<Entities.Users>(sql, new
-            {
-                UserName = user.UserName
-            });
-
-            if (foundUser == null || !BCrypt.Net.BCrypt.Verify(user.Password, foundUser.Password))
-            {
-                return null;
-            }
-
-            var userSql = @"
-                            SELECT 
-                                u.Id,
-                                u.UserName,
-                                u.RoleId,
-                                u.CreatedAt,
-
-                                r.Id,
-                                r.Name,
-
-                                a.Id,
-                                a.AgentName,
-                                a.AgentCode,
-                                a.Address,
-                                a.Phone
-                            FROM Users u 
-                            JOIN Roles r ON u.RoleId = r.Id 
-                            JOIN Agents a ON u.AgentId = a.Id
-                            WHERE u.Id = @UserId";
-
-            var result = await connection.QueryAsync<Entities.Users, Entities.Roles, Entities.Agents, Entities.Users>(
-                userSql,
-                (userEntity, role, agent) =>
-                {
-                    userEntity.Role = role;
-                    userEntity.Agent = agent;
-                    userEntity.RoleId = role.Id;
-                    return userEntity;
-                },
-                new { UserId = foundUser.Id },
-                splitOn: "Id, Id"
-            );
-
-            var fullUser = result.FirstOrDefault();
-
-            var accessToken = _tokenProvider.CreateToken(fullUser!);
-            var refreshToken = await _refreshTokenProvider.CreateRefreshToken(accessToken);
-
-            return (fullUser, accessToken, refreshToken);
+            _configuration = configuration;
         }
 
         public async Task<(string, bool)> CreateUser(CreateUserDto userDto)
         {
             using var connection = _context.CreateConnection();
+            string salt = _configuration["Cryptoraphy:Salt"];
+            string password = userDto.Password + salt;
 
-            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
             const string checkUserNameSql = "SELECT UserName FROM Users WHERE UserName = @UserName";
             if (!string.IsNullOrEmpty(userDto.UserName))
             {
@@ -90,8 +33,8 @@ namespace hrm.Respository.Users
             }
 
             const string sql = @"
-                                INSERT INTO Users (UserName, Password, RoleId, AgentId)
-                                VALUES (@UserName, @Password, @RoleId, @AgentId);
+                                INSERT INTO Users (UserName, Password, RoleId, AgentId, Permissions)
+                                VALUES (@UserName, @Password, @RoleId, @AgentId, @Permissions);
                                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             var rowsAffected = await connection.ExecuteScalarAsync<int>(sql, new
@@ -100,6 +43,7 @@ namespace hrm.Respository.Users
                 Password = hashedPassword,
                 RoleId = userDto.RoleId,
                 AgentId = userDto.AgentId,
+                Permissions = userDto.Permissions
             });
 
             if (rowsAffected > 0)
@@ -131,6 +75,7 @@ namespace hrm.Respository.Users
                                         u.Id,
                                         u.UserName,
                                         u.CreatedAt,
+                                        u.Permissions,
 
                                         r.Id,
                                         r.Name,
@@ -140,13 +85,13 @@ namespace hrm.Respository.Users
                                         a.AgentCode,
                                         a.Address,
                                         a.Phone
-                                        FROM Users u 
-                                        JOIN Roles r ON u.RoleId = r.Id 
-                                        JOIN Agents a ON u.AgentId = a.Id
-                                        ORDER BY u.CreatedAt DESC
-                                        OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;";
+                                    FROM Users u 
+                                    JOIN Roles r ON u.RoleId = r.Id 
+                                    JOIN Agents a ON u.AgentId = a.Id
+                                    ORDER BY u.CreatedAt DESC
+                                    OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;";
 
-            var users = await connection.QueryAsync<Entities.Users, Entities.Roles, Entities.Agents, Entities.Users>(
+            var users = (await connection.QueryAsync<Entities.Users, Entities.Roles, Entities.Agents, Entities.Users>(
                 userSql,
                 (user, role, agent) =>
                 {
@@ -160,28 +105,46 @@ namespace hrm.Respository.Users
                     PageSize = pageSize
                 },
                 splitOn: "Id,Id"
-            );
+            )).ToList();
 
             const string countSql = "SELECT COUNT(*) FROM Users";
             var totalRows = await connection.ExecuteScalarAsync<int>(countSql);
+
+            //const string permissionSql = @"
+            //                                SELECT p.Id, p.Name, p.KeyName
+            //                                FROM UserPermissions up
+            //                                JOIN Permissions p ON up.PermissionId = p.Id
+            //                                WHERE up.UserId = @UserId";
+
+            //foreach (var user in users)
+            //{
+            //    var permissions = (await connection.QueryAsync<Entities.Permissions>(
+            //        permissionSql,
+            //        new { UserId = user.Id }
+            //    )).ToList();
+
+            //    var joined = string.Join(", ", permissions.Select(p => p.KeyName));
+
+            //    user.Permissions = joined;
+            //}
 
             return (users, totalRows);
         }
 
 
-
         public async Task<(string, bool)> UpdateUser(int userId, CreateUserDto userDto)
         {
             using var connection = _context.CreateConnection();
-            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
 
+            // Kiểm tra user tồn tại
             const string checkIdSql = "SELECT * FROM Users WHERE Id = @Id";
-            var existingUserById = await connection.QueryFirstOrDefaultAsync<Entities.Users>(checkIdSql, new { Id = userId });
-            if (existingUserById == null)
+            var existingUser = await connection.QueryFirstOrDefaultAsync<Entities.Users>(checkIdSql, new { Id = userId });
+            if (existingUser == null)
             {
                 return ("User not exists", false);
             }
 
+            // Kiểm tra trùng username
             const string checkUserNameSql = "SELECT * FROM Users WHERE UserName = @UserName";
             var existingUserByName = await connection.QueryFirstOrDefaultAsync<Entities.Users>(checkUserNameSql, new { UserName = userDto.UserName });
             if (existingUserByName != null && existingUserByName.Id != userId)
@@ -189,18 +152,29 @@ namespace hrm.Respository.Users
                 return ("Username already exists", false);
             }
 
+            // Xử lý permissions
+            var permissionsCsv = userDto.Permissions != null
+                ? string.Join(",", userDto.Permissions)
+                : null;
+
+            // Thực hiện cập nhật
             const string sql = @"
                                 UPDATE Users 
-                                SET UserName = @UserName, Password = @Password, RoleId = @RoleId, AgentId = @AgentId
+                                SET UserName = @UserName, 
+                                    Password = @Password, 
+                                    RoleId = @RoleId, 
+                                    AgentId = @AgentId, 
+                                    Permissions = @Permissions
                                 WHERE Id = @UserId;";
 
             var rowsAffected = await connection.ExecuteAsync(sql, new
             {
                 UserName = userDto.UserName,
-                Password = hashedPassword,
+                Password = existingUser.Password,
                 RoleId = userDto.RoleId,
                 AgentId = userDto.AgentId,
-                UserId = userId
+                UserId = userId,
+                Permissions = permissionsCsv
             });
 
             if (rowsAffected <= 0)
@@ -210,6 +184,7 @@ namespace hrm.Respository.Users
 
             return ("Updated user successfully", true);
         }
+
         public async Task<Entities.Users?> GetUserById(int userId)
         {
             using var connection = _context.CreateConnection();
@@ -218,6 +193,7 @@ namespace hrm.Respository.Users
                                         u.Id,
                                         u.UserName,
                                         u.CreatedAt,
+                                        u.Permissions,
                                         r.Id,
                                         r.Name,
                                         a.Id,
@@ -240,8 +216,32 @@ namespace hrm.Respository.Users
                 new { UserId = userId },
                 splitOn: "Id, Id"
             );
+
+            //var permissionSql = @"
+            //                    SELECT p.Id, p.Name, p.KeyName
+            //                    FROM UserPermissions up
+            //                    JOIN Permissions p ON up.PermissionId = p.Id
+            //                    WHERE up.UserId = @UserId";
+
+            //var permissions = (await connection.QueryAsync<Entities.Permissions>(permissionSql, new { UserId = userId })).ToList();
+            //var joined = string.Join(", ", permissions.Select(p => p.KeyName));
+
+            //result.FirstOrDefault()!.Permissions = joined;
             return result.FirstOrDefault();
 
+        }
+        public async Task<(string, bool)> ChangePassword(string newPassword, int userId)
+        {
+            using var connection = _context.CreateConnection();
+            string salt = _configuration["Cryptoraphy:Salt"];
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(newPassword + salt);
+            const string sql = "UPDATE Users SET Password = @Password WHERE Id = @UserId";
+            var rowsAffected = await connection.ExecuteAsync(sql, new { Password = hashedPassword, UserId = userId });
+            if (rowsAffected <= 0)
+            {
+                return ("Failed to change password", false);
+            }
+            return ("Changed password successfully", true);
         }
     }
 }

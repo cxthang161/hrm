@@ -11,7 +11,7 @@
         public DateTime UpdatedAt { get; set; }
 
         public int AgentId { get; set; }
-        public int UpdatedBy { get; set; }
+        //public int UpdatedBy { get; set; }
 
         public Agents? AgentInfo { get; set; }
         public Users? UpdatedByUser { get; set; }

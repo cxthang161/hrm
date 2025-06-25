@@ -40,6 +40,7 @@ namespace hrm.Respository.Auth
                                 u.UserName,
                                 u.RoleId,
                                 u.CreatedAt,
+                                u.Permissions,
 
                                 r.Id,
                                 r.Name,
@@ -68,6 +69,16 @@ namespace hrm.Respository.Auth
             );
 
             var fullUser = result.FirstOrDefault();
+
+            //var permissionSql = @"
+            //                    SELECT p.Id, p.Name, p.KeyName
+            //                    FROM UserPermissions up
+            //                    JOIN Permissions p ON up.PermissionId = p.Id
+            //                    WHERE up.UserId = @UserId";
+
+            //var permissions = (await connection.QueryAsync<Entities.Permissions>(permissionSql, new { UserId = foundUser.Id })).ToList();
+            //var joined = string.Join(", ", permissions.Select(p => p.KeyName));
+            //fullUser!.Permissions = joined;
 
             var accessToken = _tokenProvider.CreateToken(fullUser!);
             var refreshToken = await _refreshTokenProvider.CreateRefreshToken(accessToken);

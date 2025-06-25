@@ -1,6 +1,6 @@
-﻿namespace hrm.Entities
+﻿namespace hrm.DTOs
 {
-    public class CloudinarySettings
+    public class CloudinarySettingsDto
     {
         public string CloudName { get; set; } = "";
         public string ApiKey { get; set; } = "";

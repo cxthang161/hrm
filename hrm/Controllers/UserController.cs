@@ -1,8 +1,10 @@
 ﻿using hrm.Common;
 using hrm.DTOs;
+using hrm.Providers;
 using hrm.Respository.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 
 namespace hrm.Controllers
@@ -12,21 +14,14 @@ namespace hrm.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserRespository _userRepository;
+        private readonly AesCryptoProvider _aesCryptoProvider;
 
-        public class AuthResponse
-        {
-            public UserDto UserInfo { get; set; } = null!;
-            public string AccessToken { get; set; } = string.Empty;
-            public string RefreshToken { get; set; } = string.Empty;
-            public string Permission { get; set; } = string.Empty;
-        }
-
-
-        public UserController(IUserRespository userRepository)
+        public UserController(IUserRespository userRepository, AesCryptoProvider aesCryptoProvider)
         {
             _userRepository = userRepository;
+            _aesCryptoProvider = aesCryptoProvider;
         }
-        [Authorize(Roles = "1")]
+        [Authorize(Roles = "admin")]
         [HttpPost("create")]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto request)
         {
@@ -34,7 +29,7 @@ namespace hrm.Controllers
             return Ok(new BaseResponse<string>("", result.Item1, result.Item2));
         }
 
-        [Authorize(Roles = "1")]
+        [Authorize(Roles = "admin")]
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
@@ -43,7 +38,7 @@ namespace hrm.Controllers
 
         }
 
-        [Authorize(Roles = "1")]
+        [Authorize(Roles = "admin")]
         [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] CreateUserDto request)
         {
@@ -52,7 +47,6 @@ namespace hrm.Controllers
 
         }
 
-        [Authorize(Roles = "1")]
         [HttpGet("get-all")]
         public async Task<IActionResult> GetAllUsers([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
         {
@@ -68,7 +62,8 @@ namespace hrm.Controllers
                 Id = u.Id,
                 UserName = u.UserName,
                 CreatedAt = u.CreatedAt,
-                Agent = u.Agent
+                Agent = u.Agent,
+                Permissions = u.Permissions
             });
 
             var pagination = new PaginationResponse<UserDto>(
@@ -80,7 +75,7 @@ namespace hrm.Controllers
             return Ok(new BaseResponse<PaginationResponse<UserDto>>(pagination, "Users retrieved successfully", true));
         }
 
-        //[Authorize(Roles = "1")]
+        [Authorize(Roles = "admin")]
         [HttpGet("get-by-id/{id}")]
         public async Task<IActionResult> GetUserById(int id)
         {
@@ -89,14 +84,35 @@ namespace hrm.Controllers
             {
                 return NotFound("User not found.");
             }
+            List<string> permissionList = string.IsNullOrEmpty(user.Permissions)
+                                        ? new List<string>()
+                                        : user.Permissions.Split(',').Select(p => p.Trim()).ToList();
+
+            string? permissions = user.Permissions != null
+                                    ? _aesCryptoProvider.Encrypt(JsonConvert.SerializeObject(permissionList))
+                                    : null;
+
             var userDto = new UserDto
             {
                 Id = user.Id,
                 UserName = user.UserName,
                 CreatedAt = user.CreatedAt,
-                Agent = user.Agent
+                Agent = user.Agent,
+                Permissions = user.Permissions,
             };
             return Ok(new BaseResponse<UserDto>(userDto, "User retrieved successfully", true));
+        }
+
+        [Authorize(Roles = "admin")]
+        [HttpPost("change-password/{id}")]
+        public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordDto request)
+        {
+            if (string.IsNullOrEmpty(request.Password))
+            {
+                return BadRequest("New password and confirm password cannot be empty.");
+            }
+            var result = await _userRepository.ChangePassword(request.Password, id);
+            return Ok(new BaseResponse<string>("", result.Item1, result.Item2));
         }
     }
 }

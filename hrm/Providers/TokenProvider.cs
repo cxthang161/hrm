@@ -1,9 +1,9 @@
-﻿using hrm.Entities;
-using Microsoft.IdentityModel.JsonWebTokens;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using hrm.Entities;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
 
 namespace hrm.Providers
 {
@@ -20,6 +20,7 @@ namespace hrm.Providers
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var permissionKeys = user.Permissions ?? string.Empty;
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -27,7 +28,8 @@ namespace hrm.Providers
                     [
                         new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sid, user.Id.ToString()),
                         new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Name, user.UserName),
-                        new Claim(ClaimTypes.Role, user.RoleId.ToString())
+                        new Claim(ClaimTypes.Role, user.Role.Name),
+                        new Claim("permissions", permissionKeys)
                     ]
                 ),
                 Expires = DateTime.UtcNow.AddHours(configuration.GetValue<int>("JWT:Expiration")),

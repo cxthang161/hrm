@@ -18,7 +18,6 @@ public class AuthController : ControllerBase
         public UserDto UserInfo { get; set; } = null!;
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
-        public string Permission { get; set; } = string.Empty;
     }
 
 
@@ -43,7 +42,6 @@ public class AuthController : ControllerBase
         };
 
         return Ok(new BaseResponse<RefreshTokenResponseDto>(response, "Success", true));
-
     }
 
     [HttpPost("login")]
@@ -56,7 +54,11 @@ public class AuthController : ControllerBase
         {
             return Unauthorized("Invalid username or password");
         }
-        string permission = _aesCryptoProvider.Encrypt(user.Role.Name);
+
+        string? permissions = user.Permissions != null
+                                ? _aesCryptoProvider.Encrypt(user.Role.Name + "," + user.Permissions)
+                                : null;
+
         var response = new AuthResponse
         {
             UserInfo = new UserDto
@@ -64,11 +66,11 @@ public class AuthController : ControllerBase
                 Id = user.Id,
                 UserName = user.UserName,
                 Agent = user.Agent,
-                CreatedAt = user.CreatedAt
+                CreatedAt = user.CreatedAt,
+                Permissions = permissions,
             },
-            Permission = permission,
             AccessToken = accessToken,
-            RefreshToken = refreshToken
+            RefreshToken = refreshToken,
         };
 
         return Ok(new BaseResponse<AuthResponse>(response, "", true));

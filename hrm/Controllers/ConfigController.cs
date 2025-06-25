@@ -13,12 +13,13 @@ namespace hrm.Controllers
     {
         private readonly IConfigRespository _configRespository;
 
+
         public ConfigController(IConfigRespository configRespository)
         {
             _configRespository = configRespository;
         }
 
-        [Authorize(Roles = "1")]
+        [Authorize(Policy = "Permission:create_config")]
         [HttpPost("create")]
         public async Task<IActionResult> CreateConfig([FromForm] ConfigDto configDto)
         {
@@ -38,7 +39,7 @@ namespace hrm.Controllers
             return Ok(new BaseResponse<string>("", message, success));
         }
 
-        [Authorize(Roles = "1")]
+        [Authorize(Policy = "Permission:edit_config")]
         [HttpPost("update/{id}")]
         public async Task<IActionResult> UpdateConfig([FromForm] ConfigUpdateDto configDto, int id)
         {
@@ -71,6 +72,7 @@ namespace hrm.Controllers
             return Ok(new BaseResponse<Entities.Configs>(config, "Success", true));
         }
 
+        [Authorize(Policy = "Permission:edit_config")]
         [HttpGet("get-all")]
         public async Task<IActionResult> GetAllConfigs([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
         {

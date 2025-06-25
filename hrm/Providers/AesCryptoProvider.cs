@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace hrm.Providers
 {
@@ -13,15 +14,20 @@ namespace hrm.Providers
             _configuration = configuration;
         }
 
-        public string Encrypt(string plainText)
+        public string Encrypt(string list)
         {
+            List<string> permissionList = string.IsNullOrEmpty(list)
+                ? new List<string>()
+                : list.Split(',').Select(p => p.Trim()).ToList();
+
+            string json = JsonConvert.SerializeObject(permissionList);
+
             string secretKey = _configuration["Cryptoraphy:SecretKey"];
             string salt = _configuration["Cryptoraphy:Salt"];
 
             byte[] keyBytes = Encoding.UTF8.GetBytes(secretKey);
-
             byte[] ivBytes = Encoding.UTF8.GetBytes(salt);
-            byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
+            byte[] plainBytes = Encoding.UTF8.GetBytes(json);
 
             using var aes = Aes.Create();
             aes.KeySize = 128;
