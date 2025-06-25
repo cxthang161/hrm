@@ -16,6 +16,7 @@ create table Users (
 	Id int identity(1,1) not null primary key,
 	UserName nvarchar(100) unique not null,
 	Password nvarchar(100) not null,
+	Users ADD Permissions NVARCHAR(MAX),
 	RoleId int not null foreign key references Roles(Id),
 	AgentId int not null foreign key references Agents(Id),
 	CreatedAt Datetime default getDate()
@@ -47,4 +48,10 @@ CREATE TABLE Permissions(
 	KeyName varchar(50) not null unique,
 )
 
-ALTER TABLE Users ADD Permissions NVARCHAR(MAX);
+CREATE TABLE UserPermissions (
+    UserId INT NOT NULL,
+    PermissionId INT NOT NULL,
+    PRIMARY KEY (UserId, PermissionId),
+    FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE,
+    FOREIGN KEY (PermissionId) REFERENCES Permissions(Id) ON DELETE CASCADE
+);
