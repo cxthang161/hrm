@@ -21,7 +21,6 @@ namespace hrm.DTOs
     {
         public required string UserName { get; set; }
         public string? Password { get; set; }
-        public int RoleId { get; set; }
         public int? AgentId { get; set; } = 2;
         public string Permissions { get; set; } = string.Empty;
     }

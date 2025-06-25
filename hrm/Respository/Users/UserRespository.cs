@@ -34,14 +34,13 @@ namespace hrm.Respository.Users
 
             const string sql = @"
                                 INSERT INTO Users (UserName, Password, RoleId, AgentId, Permissions)
-                                VALUES (@UserName, @Password, @RoleId, @AgentId, @Permissions);
+                                VALUES (@UserName, @Password, 2, @AgentId, @Permissions);
                                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             var rowsAffected = await connection.ExecuteScalarAsync<int>(sql, new
             {
                 UserName = userDto.UserName,
                 Password = hashedPassword,
-                RoleId = userDto.RoleId,
                 AgentId = userDto.AgentId,
                 Permissions = userDto.Permissions
             });
@@ -162,7 +161,6 @@ namespace hrm.Respository.Users
                                 UPDATE Users 
                                 SET UserName = @UserName, 
                                     Password = @Password, 
-                                    RoleId = @RoleId, 
                                     AgentId = @AgentId, 
                                     Permissions = @Permissions
                                 WHERE Id = @UserId;";
@@ -171,7 +169,6 @@ namespace hrm.Respository.Users
             {
                 UserName = userDto.UserName,
                 Password = existingUser.Password,
-                RoleId = userDto.RoleId,
                 AgentId = userDto.AgentId,
                 UserId = userId,
                 Permissions = permissionsCsv

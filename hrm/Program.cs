@@ -1,9 +1,9 @@
-using System.Text;
 using CloudinaryDotNet;
 using hrm;
 using hrm.Authorization;
 using hrm.Context;
 using hrm.Providers;
+using hrm.Respository.Agents;
 using hrm.Respository.Auth;
 using hrm.Respository.Configs;
 using hrm.Respository.Permissions;
@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,7 @@ builder.Services.AddScoped<IConfigRespository, ConfigRespository>();
 builder.Services.AddScoped<IRoleRespository, RoleRespository>();
 builder.Services.AddScoped<IAuthRespository, AuthRespository>();
 builder.Services.AddScoped<IPermissionRespository, PermissionRespository>();
+builder.Services.AddScoped<IAgentRespository, AgentRespository>();
 
 // Add providers
 builder.Services.AddSingleton<TokenProvider>();

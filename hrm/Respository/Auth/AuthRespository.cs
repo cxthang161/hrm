@@ -1,8 +1,8 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using Dapper;
+﻿using Dapper;
 using hrm.Context;
 using hrm.DTOs;
 using hrm.Providers;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace hrm.Respository.Auth
 {
@@ -11,13 +11,15 @@ namespace hrm.Respository.Auth
         private readonly HRMContext _context;
         private readonly TokenProvider _tokenProvider;
         private readonly RefreshTokenProvider _refreshTokenProvider;
+        private readonly IConfiguration _configuration;
 
 
-        public AuthRespository(HRMContext context, TokenProvider tokenProvider, RefreshTokenProvider refreshTokenProvider)
+        public AuthRespository(HRMContext context, TokenProvider tokenProvider, RefreshTokenProvider refreshTokenProvider, IConfiguration configuration)
         {
             _context = context;
             _tokenProvider = tokenProvider;
             _refreshTokenProvider = refreshTokenProvider;
+            _configuration = configuration;
         }
         public async Task<(Entities.Users, string, string)?> AuthLogin(UserLoginDto user)
         {
@@ -28,8 +30,11 @@ namespace hrm.Respository.Auth
             {
                 UserName = user.UserName
             });
+            string salt = _configuration["Cryptoraphy:Salt"];
+            string passwordWithSalt = user.Password + salt;
 
-            if (foundUser == null || !BCrypt.Net.BCrypt.Verify(user.Password, foundUser.Password))
+
+            if (foundUser == null || !BCrypt.Net.BCrypt.Verify(passwordWithSalt, foundUser.Password))
             {
                 return null;
             }

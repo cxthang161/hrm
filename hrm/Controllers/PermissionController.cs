@@ -1,6 +1,7 @@
 ﻿using hrm.Common;
 using hrm.DTOs;
 using hrm.Respository.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace hrm.Controllers
@@ -27,6 +28,7 @@ namespace hrm.Controllers
             return Ok(new BaseResponse<IEnumerable<Entities.Permissions>>(permissions, "Success!", true));
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("create")]
         public async Task<IActionResult> CreatePermission([FromBody] PermissionDto permissionDto)
         {
@@ -42,6 +44,7 @@ namespace hrm.Controllers
             return Ok(new BaseResponse<string>("", message, success));
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("update/{id}")]
         public async Task<IActionResult> UpdatePermission([FromBody] PermissionDto permissionDto, int id)
         {

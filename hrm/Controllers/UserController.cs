@@ -21,6 +21,7 @@ namespace hrm.Controllers
             _userRepository = userRepository;
             _aesCryptoProvider = aesCryptoProvider;
         }
+
         [Authorize(Roles = "admin")]
         [HttpPost("create")]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto request)
