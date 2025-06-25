@@ -40,3 +40,9 @@ create table RefreshTokens(
 	ExpiresAt DateTime not null,
 	CreatedAt DateTime default getDate()
 )
+
+CREATE TABLE Permissions(
+	Id int identity(1,1) not null Primary Key,
+	Name varchar(50) not null,
+	KeyName varchar(50) not null,
+)
