@@ -43,6 +43,6 @@ create table RefreshTokens(
 
 CREATE TABLE Permissions(
 	Id int identity(1,1) not null Primary Key,
-	Name varchar(50) not null,
-	KeyName varchar(50) not null,
+	Name varchar(50) not null unique,
+	KeyName varchar(50) not null unique,
 )
