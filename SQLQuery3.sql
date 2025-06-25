@@ -46,3 +46,5 @@ CREATE TABLE Permissions(
 	Name varchar(50) not null unique,
 	KeyName varchar(50) not null unique,
 )
+
+ALTER TABLE Users ADD Permissions NVARCHAR(MAX);
