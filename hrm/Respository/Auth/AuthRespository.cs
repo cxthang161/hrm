@@ -1,8 +1,8 @@
-﻿using Dapper;
+﻿using System.IdentityModel.Tokens.Jwt;
+using Dapper;
 using hrm.Context;
 using hrm.DTOs;
 using hrm.Providers;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace hrm.Respository.Auth
 {
@@ -45,7 +45,6 @@ namespace hrm.Respository.Auth
                                 u.UserName,
                                 u.RoleId,
                                 u.CreatedAt,
-                                u.Permissions,
 
                                 r.Id,
                                 r.Name,
@@ -75,21 +74,22 @@ namespace hrm.Respository.Auth
 
             var fullUser = result.FirstOrDefault();
 
-            //var permissionSql = @"
-            //                    SELECT p.Id, p.Name, p.KeyName
-            //                    FROM UserPermissions up
-            //                    JOIN Permissions p ON up.PermissionId = p.Id
-            //                    WHERE up.UserId = @UserId";
+            var permissionSql = @"
+                                SELECT p.Id, p.Name, p.Description
+                                FROM UserPermissions up
+                                JOIN Permissions p ON up.PermissionId = p.Id
+                                WHERE up.UserId = @UserId";
 
-            //var permissions = (await connection.QueryAsync<Entities.Permissions>(permissionSql, new { UserId = foundUser.Id })).ToList();
-            //var joined = string.Join(", ", permissions.Select(p => p.KeyName));
-            //fullUser!.Permissions = joined;
+            var permissions = (await connection.QueryAsync<Entities.Permissions>(permissionSql, new { UserId = foundUser.Id })).ToList();
+            var joined = string.Join(", ", permissions.Select(p => p.Name));
+            fullUser!.Permissions = joined == null ? string.Empty : joined;
 
             var accessToken = _tokenProvider.CreateToken(fullUser!);
             var refreshToken = await _refreshTokenProvider.CreateRefreshToken(accessToken);
 
             return (fullUser, accessToken, refreshToken);
         }
+
         public async Task<(string, string)?> RefreshToken(string accessToken, string refreshToken)
         {
             using var connection = _context.CreateConnection();

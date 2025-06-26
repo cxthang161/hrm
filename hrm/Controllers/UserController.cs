@@ -41,13 +41,14 @@ namespace hrm.Controllers
 
         [Authorize(Roles = "admin")]
         [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] CreateUserDto request)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto request)
         {
             var result = await _userRepository.UpdateUser(id, request);
             return Ok(new BaseResponse<string>("", result.Item1, result.Item2));
 
         }
 
+        [Authorize(Roles = "admin")]
         [HttpGet("get-all")]
         public async Task<IActionResult> GetAllUsers([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
         {

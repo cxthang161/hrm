@@ -3,14 +3,14 @@
     public class RefreshTokenDto
     {
         public required string Token { get; set; }
-        public DateTime ExpiriesAt { get; set; }
+        public required DateTime ExpiriesAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public required int UserId { get; set; }
     }
 
     public class RefreshTokenResponseDto
     {
-        public string? AccessToken { get; set; }
-        public string? RefreshToken { get; set; }
+        public required string AccessToken { get; set; }
+        public required string RefreshToken { get; set; }
     }
 }

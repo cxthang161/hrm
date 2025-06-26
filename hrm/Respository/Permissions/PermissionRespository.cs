@@ -22,21 +22,21 @@ namespace hrm.Respository.Permissions
         public async Task<(string, bool)> CreatePermission(PermissionDto permissionDto)
         {
             using var connection = _context.CreateConnection();
-            string existsSql = "SELECT Name, KeyName FROM Permissions WHERE Name = @Name OR KeyName = @KeyName";
+            string existsSql = "SELECT Name, KeyName FROM Permissions WHERE Name = @Name OR Description = @Description";
             var existingPermission = await connection.QueryFirstOrDefaultAsync<Entities.Permissions>(existsSql, new
             {
                 Name = permissionDto.Name,
-                KeyName = permissionDto.KeyName
+                Description = permissionDto.Description
             });
             if (existingPermission != null)
             {
                 return ("Permission with the same name or key already exists.", false);
             }
-            string sql = "INSERT INTO Permissions (Name, KeyName) VALUES (@Name, @KeyName)";
+            string sql = "INSERT INTO Permissions (Name, Description) VALUES (@Name, @Description)";
             var result = await connection.ExecuteAsync(sql, new
             {
                 Name = permissionDto.Name,
-                KeyName = permissionDto.KeyName
+                Description = permissionDto.Description
             });
             return (result > 0 ? "Permission created successfully." : "Failed to create permission.", result > 0);
         }
@@ -44,22 +44,22 @@ namespace hrm.Respository.Permissions
         public async Task<(string, bool)> UpdatePermission(int id, PermissionDto permissionDto)
         {
             using var connection = _context.CreateConnection();
-            string existsSql = "SELECT Name, KeyName FROM Permissions WHERE Name = @Name OR KeyName = @KeyName";
+            string existsSql = "SELECT Name, KeyName FROM Permissions WHERE Name = @Name OR Description = @Description";
             var existingPermission = await connection.QueryFirstOrDefaultAsync<Entities.Permissions>(existsSql, new
             {
                 Name = permissionDto.Name,
-                KeyName = permissionDto.KeyName
+                Description = permissionDto.Description
             });
             if (existingPermission != null)
             {
                 return ("Permission with the same name or key already exists.", false);
             }
-            string sql = "UPDATE Permissions SET Name = @Name, KeyName = @KeyName WHERE Id = @Id";
+            string sql = "UPDATE Permissions SET Name = @Name, Description = @Description WHERE Id = @Id";
             var result = await connection.ExecuteAsync(sql, new
             {
                 Id = id,
                 Name = permissionDto.Name,
-                KeyName = permissionDto.KeyName
+                Description = permissionDto.Description
             });
             return (result > 0 ? "Permission updated successfully." : "Failed to update permission.", result > 0);
         }

@@ -33,20 +33,35 @@ namespace hrm.Respository.Users
             }
 
             const string sql = @"
-                                INSERT INTO Users (UserName, Password, RoleId, AgentId, Permissions)
-                                VALUES (@UserName, @Password, 2, @AgentId, @Permissions);
+                                INSERT INTO Users (UserName, Password, RoleId, AgentId)
+                                VALUES (@UserName, @Password, 2, @AgentId);
                                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-            var rowsAffected = await connection.ExecuteScalarAsync<int>(sql, new
+            var userId = await connection.ExecuteScalarAsync<int>(sql, new
             {
                 UserName = userDto.UserName,
                 Password = hashedPassword,
                 AgentId = userDto.AgentId,
-                Permissions = userDto.Permissions
             });
 
-            if (rowsAffected > 0)
+
+            if (userId > 0)
             {
+                if (userDto.Permissions?.Any() == true)
+                {
+                    const string insertPermissionSql = @"
+                                                    INSERT INTO UserPermissions (UserId, PermissionId)
+                                                    VALUES (@UserId, @PermissionId);";
+
+                    foreach (var permissionId in userDto.Permissions)
+                    {
+                        await connection.ExecuteAsync(insertPermissionSql, new
+                        {
+                            UserId = userId,
+                            PermissionId = permissionId
+                        });
+                    }
+                }
                 return ("User created successfully", true);
             }
 
@@ -62,6 +77,10 @@ namespace hrm.Respository.Users
             {
                 return ("User not found", false);
             }
+
+            const string deletePermissionsSql = "DELETE FROM UserPermissions WHERE UserId = @UserId";
+            await connection.ExecuteAsync(deletePermissionsSql, new { UserId = userId });
+
             return ("Deleted user successfully", true);
         }
 
@@ -74,7 +93,6 @@ namespace hrm.Respository.Users
                                         u.Id,
                                         u.UserName,
                                         u.CreatedAt,
-                                        u.Permissions,
 
                                         r.Id,
                                         r.Name,
@@ -109,29 +127,29 @@ namespace hrm.Respository.Users
             const string countSql = "SELECT COUNT(*) FROM Users";
             var totalRows = await connection.ExecuteScalarAsync<int>(countSql);
 
-            //const string permissionSql = @"
-            //                                SELECT p.Id, p.Name, p.KeyName
-            //                                FROM UserPermissions up
-            //                                JOIN Permissions p ON up.PermissionId = p.Id
-            //                                WHERE up.UserId = @UserId";
+            const string permissionSql = @"
+                                            SELECT p.Id, p.Name, p.Description
+                                            FROM UserPermissions up
+                                            JOIN Permissions p ON up.PermissionId = p.Id
+                                            WHERE up.UserId = @UserId";
 
-            //foreach (var user in users)
-            //{
-            //    var permissions = (await connection.QueryAsync<Entities.Permissions>(
-            //        permissionSql,
-            //        new { UserId = user.Id }
-            //    )).ToList();
+            foreach (var user in users)
+            {
+                var permissions = (await connection.QueryAsync<Entities.Permissions>(
+                    permissionSql,
+                    new { UserId = user.Id }
+                )).ToList();
 
-            //    var joined = string.Join(", ", permissions.Select(p => p.KeyName));
+                var joined = string.Join(", ", permissions.Select(p => p.Name));
 
-            //    user.Permissions = joined;
-            //}
+                user.Permissions = joined == null ? string.Empty : joined;
+            }
 
             return (users, totalRows);
         }
 
 
-        public async Task<(string, bool)> UpdateUser(int userId, CreateUserDto userDto)
+        public async Task<(string, bool)> UpdateUser(int userId, UpdateUserDto userDto)
         {
             using var connection = _context.CreateConnection();
 
@@ -160,7 +178,6 @@ namespace hrm.Respository.Users
             const string sql = @"
                                 UPDATE Users 
                                 SET UserName = @UserName, 
-                                    Password = @Password, 
                                     AgentId = @AgentId, 
                                     Permissions = @Permissions
                                 WHERE Id = @UserId;";
@@ -168,7 +185,6 @@ namespace hrm.Respository.Users
             var rowsAffected = await connection.ExecuteAsync(sql, new
             {
                 UserName = userDto.UserName,
-                Password = existingUser.Password,
                 AgentId = userDto.AgentId,
                 UserId = userId,
                 Permissions = permissionsCsv
@@ -190,7 +206,6 @@ namespace hrm.Respository.Users
                                         u.Id,
                                         u.UserName,
                                         u.CreatedAt,
-                                        u.Permissions,
                                         r.Id,
                                         r.Name,
                                         a.Id,
@@ -214,16 +229,16 @@ namespace hrm.Respository.Users
                 splitOn: "Id, Id"
             );
 
-            //var permissionSql = @"
-            //                    SELECT p.Id, p.Name, p.KeyName
-            //                    FROM UserPermissions up
-            //                    JOIN Permissions p ON up.PermissionId = p.Id
-            //                    WHERE up.UserId = @UserId";
+            var permissionSql = @"
+                                SELECT p.Id, p.Name, p.KeyName
+                                FROM UserPermissions up
+                                JOIN Permissions p ON up.PermissionId = p.Id
+                                WHERE up.UserId = @UserId";
 
-            //var permissions = (await connection.QueryAsync<Entities.Permissions>(permissionSql, new { UserId = userId })).ToList();
-            //var joined = string.Join(", ", permissions.Select(p => p.KeyName));
+            var permissions = (await connection.QueryAsync<Entities.Permissions>(permissionSql, new { UserId = userId })).ToList();
+            var joined = string.Join(", ", permissions.Select(p => p.Name));
 
-            //result.FirstOrDefault()!.Permissions = joined;
+            result.FirstOrDefault()!.Permissions = joined == null ? string.Empty : joined;
             return result.FirstOrDefault();
 
         }

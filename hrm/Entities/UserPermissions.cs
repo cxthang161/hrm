@@ -2,7 +2,7 @@
 {
     public class UserPermissions
     {
-        public int UserId { get; set; }
-        public int PermissionId { get; set; }
+        public required int UserId { get; set; }
+        public required int PermissionId { get; set; }
     }
 }

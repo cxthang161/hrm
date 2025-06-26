@@ -20,9 +20,16 @@ namespace hrm.DTOs
     public class CreateUserDto
     {
         public required string UserName { get; set; }
-        public string? Password { get; set; }
-        public int? AgentId { get; set; } = 2;
-        public string Permissions { get; set; } = string.Empty;
+        public required string Password { get; set; }
+        public required int AgentId { get; set; } = 2;
+        public List<int> Permissions { get; set; } = new();
+    }
+
+    public class UpdateUserDto
+    {
+        public required string UserName { get; set; }
+        public required int AgentId { get; set; } = 2;
+        public List<int> Permissions { get; set; } = new();
     }
 
     public class ChangePasswordDto

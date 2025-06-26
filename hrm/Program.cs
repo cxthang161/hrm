@@ -1,3 +1,4 @@
+using System.Text;
 using CloudinaryDotNet;
 using hrm;
 using hrm.Authorization;
@@ -13,7 +14,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,7 +37,7 @@ builder.Services.AddScoped<IAgentRespository, AgentRespository>();
 // Add providers
 builder.Services.AddSingleton<TokenProvider>();
 builder.Services.AddSingleton<RefreshTokenProvider>();
-builder.Services.AddSingleton<UploadFileProvider>();
+builder.Services.AddSingleton<CloudinaryController>();
 builder.Services.AddSingleton<AesCryptoProvider>();
 
 // Add authorization handlers and policy provider

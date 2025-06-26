@@ -72,7 +72,7 @@ namespace hrm.Controllers
             return Ok(new BaseResponse<Entities.Configs>(config, "Success", true));
         }
 
-        [Authorize(Policy = "Permission:edit_config")]
+        [Authorize(Policy = "Permission:getAll_config")]
         [HttpGet("get-all")]
         public async Task<IActionResult> GetAllConfigs([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
         {
