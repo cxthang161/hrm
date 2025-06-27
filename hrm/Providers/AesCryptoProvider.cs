@@ -22,8 +22,8 @@ namespace hrm.Providers
 
             string json = JsonConvert.SerializeObject(permissionList);
 
-            string secretKey = _configuration["Cryptoraphy:SecretKey"];
-            string salt = _configuration["Cryptoraphy:Salt"];
+            string secretKey = _configuration["Cryptoraphy:SecretKey"]!;
+            string salt = _configuration["Cryptoraphy:Salt"]!;
 
             byte[] keyBytes = Encoding.UTF8.GetBytes(secretKey);
             byte[] ivBytes = Encoding.UTF8.GetBytes(salt);
@@ -44,8 +44,8 @@ namespace hrm.Providers
 
         public string Decrypt(string cipherText)
         {
-            string secretKey = _configuration["Cryptoraphy:SecretKey"];
-            string salt = _configuration["Cryptoraphy:Salt"];
+            string secretKey = _configuration["Cryptoraphy:SecretKey"]!;
+            string salt = _configuration["Cryptoraphy:Salt"]!;
 
             byte[] keyBytes = Encoding.UTF8.GetBytes(secretKey);
 

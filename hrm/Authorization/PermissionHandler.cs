@@ -19,7 +19,7 @@ namespace hrm.Authorization
 
             if (!string.IsNullOrEmpty(permissionClaim))
             {
-                var permissions = JsonConvert.DeserializeObject<List<string>>(permissionClaim);
+                var permissions = JsonConvert.DeserializeObject<List<string>>(permissionClaim)!;
                 if (permissions.Contains(requirement.Permission))
                 {
                     context.Succeed(requirement);

@@ -23,11 +23,13 @@ namespace hrm.Controllers
         [HttpPost("create")]
         public async Task<IActionResult> CreateConfig([FromForm] ConfigDto configDto)
         {
-            if (configDto == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Invalid configuration data.");
+                var error = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage;
+                return BadRequest(error ?? "Invalid data");
             }
-            var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sid);
+
+            var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sid)!;
 
             int userId = int.Parse(userIdClaim.Value);
 
@@ -43,10 +45,12 @@ namespace hrm.Controllers
         [HttpPost("update/{id}")]
         public async Task<IActionResult> UpdateConfig([FromForm] ConfigUpdateDto configDto, int id)
         {
-            if (configDto == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Invalid configuration data.");
+                var error = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage;
+                return BadRequest(error ?? "Invalid data");
             }
+
             var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sid);
             if (userIdClaim == null)
             {
@@ -61,6 +65,7 @@ namespace hrm.Controllers
             return Ok(new BaseResponse<string>("", message, success));
         }
 
+        [Authorize(Policy = "Permission:get_config")]
         [HttpPost("get-by-id/{id}")]
         public async Task<IActionResult> GetConfigById(int id)
         {

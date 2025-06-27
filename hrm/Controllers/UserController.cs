@@ -34,9 +34,13 @@ namespace hrm.Controllers
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
+            if (id <= 0)
+            {
+                return BadRequest("Invalid user ID.");
+            }
+
             var result = await _userRepository.DeleteUser(id);
             return Ok(new BaseResponse<string>("", result.Item1, result.Item2));
-
         }
 
         [Authorize(Roles = "admin")]
@@ -45,7 +49,6 @@ namespace hrm.Controllers
         {
             var result = await _userRepository.UpdateUser(id, request);
             return Ok(new BaseResponse<string>("", result.Item1, result.Item2));
-
         }
 
         [Authorize(Roles = "admin")]

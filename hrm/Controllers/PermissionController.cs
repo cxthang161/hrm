@@ -28,14 +28,16 @@ namespace hrm.Controllers
             return Ok(new BaseResponse<IEnumerable<Entities.Permissions>>(permissions, "Success!", true));
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "admin")]
         [HttpPost("create")]
         public async Task<IActionResult> CreatePermission([FromBody] PermissionDto permissionDto)
         {
-            if (permissionDto == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Invalid permission data.");
+                var error = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage;
+                return BadRequest(error ?? "Invalid data");
             }
+
             var (message, success) = await _permissionRespository.CreatePermission(permissionDto);
             if (!success)
             {
@@ -44,13 +46,14 @@ namespace hrm.Controllers
             return Ok(new BaseResponse<string>("", message, success));
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "admin")]
         [HttpPost("update/{id}")]
         public async Task<IActionResult> UpdatePermission([FromBody] PermissionDto permissionDto, int id)
         {
-            if (permissionDto == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Invalid permission data.");
+                var error = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage;
+                return BadRequest(error ?? "Invalid data");
             }
             var (message, success) = await _permissionRespository.UpdatePermission(id, permissionDto);
             if (!success)

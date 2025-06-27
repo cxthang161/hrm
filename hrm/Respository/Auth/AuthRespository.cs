@@ -30,7 +30,7 @@ namespace hrm.Respository.Auth
             {
                 UserName = user.UserName
             });
-            string salt = _configuration["Cryptoraphy:Salt"];
+            string salt = _configuration["Cryptoraphy:Salt"]!;
             string passwordWithSalt = user.Password + salt;
 
 
@@ -41,19 +41,9 @@ namespace hrm.Respository.Auth
 
             var userSql = @"
                             SELECT 
-                                u.Id,
-                                u.UserName,
-                                u.RoleId,
-                                u.CreatedAt,
-
-                                r.Id,
-                                r.Name,
-
-                                a.Id,
-                                a.AgentName,
-                                a.AgentCode,
-                                a.Address,
-                                a.Phone
+                                u.Id, u.UserName, u.RoleId, u.CreatedAt,
+                                r.Id, r.Name,
+                                a.Id, a.AgentName, a.AgentCode, a.Address, a.Phone
                             FROM Users u 
                             JOIN Roles r ON u.RoleId = r.Id 
                             JOIN Agents a ON u.AgentId = a.Id
@@ -90,57 +80,55 @@ namespace hrm.Respository.Auth
             return (fullUser, accessToken, refreshToken);
         }
 
-        public async Task<(string, string)?> RefreshToken(string accessToken, string refreshToken)
+        public async Task<(string, string)?> RefreshToken(string expiredAccessToken, string refreshToken)
         {
             using var connection = _context.CreateConnection();
-            var principal = _tokenProvider.GetPrincipalFromExpiredToken(accessToken);
+
+            // Giải mã access token đã hết hạn để lấy thông tin user
+            var principal = _tokenProvider.GetPrincipalFromExpiredToken(expiredAccessToken);
             if (principal == null)
-            {
                 return null;
-            }
+
             var userIdStr = principal.FindFirst(JwtRegisteredClaimNames.Sid)?.Value;
-            if (!int.TryParse(userIdStr, out var userIdFromToken))
-            {
+            if (!int.TryParse(userIdStr, out var userId))
                 return null;
-            }
 
-            int userId = int.Parse(userIdStr!);
-            var sql = "SELECT * FROM Users WHERE Id = @UserId";
-            var user = await connection.QueryFirstOrDefaultAsync<Entities.Users>(sql, new { UserId = userId });
+            // Tìm người dùng
+            var user = await connection.QueryFirstOrDefaultAsync<Entities.Users>(
+                "SELECT * FROM Users WHERE Id = @UserId", new { UserId = userId });
+
             if (user == null)
-            {
                 return null;
-            }
 
-            var sqlFindToken = @"SELECT * FROM RefreshTokens WHERE UserId = @UserId AND Token = @Token";
+            // Kiểm tra refresh token trong DB
             var existingToken = await connection.QueryFirstOrDefaultAsync<Entities.RefreshTokens>(
-                sqlFindToken, new { UserId = userId, Token = refreshToken });
-            if (existingToken == null || existingToken.ExpiriesAt < DateTime.UtcNow)
-            {
-                return null;
-            }
+                @"SELECT * FROM RefreshTokens WHERE UserId = @UserId AND Token = @Token",
+                new { UserId = userId, Token = refreshToken });
 
+            if (existingToken == null || existingToken.ExpiriesAt < DateTime.UtcNow)
+                return null;
+
+            // Tạo token mới
             var newAccessToken = _tokenProvider.CreateToken(user);
             var newRefreshToken = await _refreshTokenProvider.CreateRefreshToken(newAccessToken);
 
-            if (existingToken == null)
-            {
-                return null;
-            }
-
+            // Cập nhật refresh token mới vào DB
             const string updateSql = @"
-                    UPDATE RefreshTokens 
-                    SET Token = @Token, ExpiresAt = @ExpiresAt, CreatedAt = @CreatedAt 
-                    WHERE UserId = @UserId AND Token = @OldToken";
-            await connection.ExecuteAsync(updateSql, new RefreshTokenDto
+                                        UPDATE RefreshTokens 
+                                        SET Token = @NewToken, ExpiresAt = @ExpiriesAt, CreatedAt = @CreatedAt 
+                                        WHERE UserId = @UserId AND Token = @OldToken";
+
+            await connection.ExecuteAsync(updateSql, new
             {
                 UserId = userId,
-                Token = newRefreshToken,
+                NewToken = newRefreshToken,
+                OldToken = refreshToken,
                 ExpiriesAt = DateTime.UtcNow.AddDays(7),
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
             });
 
-            return (accessToken, newRefreshToken);
+            return (newAccessToken, newRefreshToken);
         }
+
     }
 }

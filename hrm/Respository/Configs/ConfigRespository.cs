@@ -167,28 +167,9 @@ namespace hrm.Respository.Configs
         {
             using var connection = _context.CreateConnection();
             string sql = @"SELECT 
-                            c.Id,
-                            c.ProductKey,
-                            c.ConfigValue,
-                            c.LogoUrl,
-                            c.BackgroundUrl,
-                            c.NameTemplate,
-                            c.UpdatedAt,
-                            c.AgentId,
-                            c.UpdatedBy,
-
-                            a.Id,
-                            a.AgentName,
-                            a.AgentCode,
-                            a.Address,
-                            a.Phone,
-
-                            u.Id,
-                            u.UserName,
-                            u.Password,
-                            u.CreatedAt   AS UserCreatedAt,
-                            u.RoleId,
-                            u.AgentId     AS UserAgentId
+                            c.Id, c.ProductKey, c.ConfigValue, c.LogoUrl, c.BackgroundUrl, c.NameTemplate, c.UpdatedAt, c.AgentId, c.UpdatedBy,
+                            a.Id, a.AgentName, a.AgentCode, a.Address, a.Phone,
+                            u.Id, u.UserName, u.Password, u.CreatedAt, u.RoleId, u.AgentId
                         FROM Configs c
                         JOIN Agents a ON c.AgentId = a.Id
                         JOIN Users u ON c.UpdatedBy = u.Id

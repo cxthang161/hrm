@@ -1,5 +1,7 @@
 using System.Text;
 using CloudinaryDotNet;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using hrm;
 using hrm.Authorization;
 using hrm.Context;
@@ -10,6 +12,7 @@ using hrm.Respository.Configs;
 using hrm.Respository.Permissions;
 using hrm.Respository.Roles;
 using hrm.Respository.Users;
+using hrm.Validator;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
@@ -33,6 +36,18 @@ builder.Services.AddScoped<IRoleRespository, RoleRespository>();
 builder.Services.AddScoped<IAuthRespository, AuthRespository>();
 builder.Services.AddScoped<IPermissionRespository, PermissionRespository>();
 builder.Services.AddScoped<IAgentRespository, AgentRespository>();
+
+// Add validators
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateUserValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateUserValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<ChangePasswordValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UserLoginValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<AgentValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<ConfigValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<ConfigUpdateValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<PermissionValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<RefreshTokenValidator>();
 
 // Add providers
 builder.Services.AddSingleton<TokenProvider>();

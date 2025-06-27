@@ -8,7 +8,7 @@ namespace hrm.Controllers
 {
     [Route("api/agent")]
     [ApiController]
-
+    [Authorize(Roles = "admin")]
     public class AgentController : ControllerBase
     {
         private readonly IAgentRespository _agentRespository;
@@ -18,7 +18,6 @@ namespace hrm.Controllers
             _agentRespository = agentRespository;
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpGet("get-all")]
         public async Task<IActionResult> GetAll()
         {
@@ -27,26 +26,22 @@ namespace hrm.Controllers
             {
                 return NotFound("No agents found.");
             }
+
             return Ok(new BaseResponse<IEnumerable<Entities.Agents>>(agents, "Success!", true));
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpPost("create")]
         public async Task<IActionResult> CreateAgent([FromBody] AgentDto agent)
         {
-            if (agent == null)
-            {
-                return BadRequest("Invalid agent data.");
-            }
             var (message, success) = await _agentRespository.CreateAgent(agent);
             if (!success)
             {
                 return BadRequest(new BaseResponse<string>(null, message, false));
             }
+
             return Ok(new BaseResponse<string>(null, message, true));
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpDelete("delete/{agentId}")]
         public async Task<IActionResult> DeleteAgent(int agentId)
         {
@@ -55,22 +50,21 @@ namespace hrm.Controllers
             {
                 return BadRequest(new BaseResponse<string>(null, message, false));
             }
+
             return Ok(new BaseResponse<string>(null, message, true));
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpPut("update/{agentId}")]
         public async Task<IActionResult> UpdateAgent(int agentId, [FromBody] AgentDto agent)
         {
-            if (agent == null)
-            {
-                return BadRequest("Invalid agent data.");
-            }
+            // Không cần kiểm tra agent == null
+
             var (message, success) = await _agentRespository.UpdateAgent(agentId, agent);
             if (!success)
             {
                 return BadRequest(new BaseResponse<string>(null, message, false));
             }
+
             return Ok(new BaseResponse<string>(null, message, true));
         }
     }

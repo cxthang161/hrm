@@ -15,14 +15,14 @@ namespace hrm.Respository.Agents
         public async Task<IEnumerable<Entities.Agents>> GetAllAgents()
         {
             using var connection = _context.CreateConnection();
-            string sql = "SELECT * FROM Agents OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;";
+            string sql = "SELECT * FROM Agents;";
             var agents = await connection.QueryAsync<Entities.Agents>(sql);
             return agents;
         }
         public async Task<(string, bool)> CreateAgent(AgentDto agent)
         {
             using var connection = _context.CreateConnection();
-            string sql = "INSERT INTO Agents (AgentName, AgentCode, Address, Phone) OUTPUT INSERTED.Id VALUES (@AgentName, @AgentCode, @Address, @Phone)";
+            string sql = "INSERT INTO Agents (AgentName, AgentCode, Address, Phone) VALUES (@AgentName, @AgentCode, @Address, @Phone)";
             var resutl = await connection.ExecuteAsync(sql, new
             {
                 AgentName = agent.AgentName,

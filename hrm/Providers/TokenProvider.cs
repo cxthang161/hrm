@@ -28,11 +28,11 @@ namespace hrm.Providers
                     [
                         new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sid, user.Id.ToString()),
                         new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Name, user.UserName),
-                        new Claim(ClaimTypes.Role, user.Role.Name),
+                        new Claim(ClaimTypes.Role, user.Role!.Name),
                         new Claim("permissions", permissionKeys)
                     ]
                 ),
-                Expires = DateTime.UtcNow.AddHours(configuration.GetValue<int>("JWT:Expiration")),
+                Expires = DateTime.UtcNow.AddDays(configuration.GetValue<int>("JWT:Expiration")),
                 SigningCredentials = creds,
                 Issuer = configuration["JWT:Issuer"],
                 Audience = configuration["JWT:Audience"]

@@ -30,6 +30,11 @@ public class AuthController : ControllerBase
     [HttpPost("refresh-token")]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenResponseDto request)
     {
+        if (!ModelState.IsValid)
+        {
+            var error = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage;
+            return BadRequest(error ?? "Invalid data");
+        }
         var result = await _authRespository.RefreshToken(request.AccessToken, request.RefreshToken);
         if (result is null)
         {
@@ -47,7 +52,11 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] UserLoginDto request)
     {
-
+        if (!ModelState.IsValid)
+        {
+            var error = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage;
+            return BadRequest(error ?? "Invalid data");
+        }
         var userInfo = await _authRespository.AuthLogin(request);
 
         if (userInfo is not (Users user, string accessToken, string refreshToken))
@@ -56,7 +65,7 @@ public class AuthController : ControllerBase
         }
 
         string? permissions = user.Permissions != null
-                                ? _aesCryptoProvider.Encrypt(user.Role.Name + "," + user.Permissions)
+                                ? _aesCryptoProvider.Encrypt(user.Role!.Name + "," + user.Permissions)
                                 : null;
 
         var response = new AuthResponse

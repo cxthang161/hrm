@@ -18,7 +18,7 @@ namespace hrm.Respository.Users
         public async Task<(string, bool)> CreateUser(CreateUserDto userDto)
         {
             using var connection = _context.CreateConnection();
-            string salt = _configuration["Cryptoraphy:Salt"];
+            string salt = _configuration["Cryptoraphy:Salt"]!;
             string password = userDto.Password + salt;
 
             var hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
@@ -90,18 +90,9 @@ namespace hrm.Respository.Users
 
             const string userSql = @"
                                     SELECT 
-                                        u.Id,
-                                        u.UserName,
-                                        u.CreatedAt,
-
-                                        r.Id,
-                                        r.Name,
-
-                                        a.Id,
-                                        a.AgentName,
-                                        a.AgentCode,
-                                        a.Address,
-                                        a.Phone
+                                        u.Id, u.UserName, u.CreatedAt,
+                                        r.Id, r.Name,
+                                        a.Id, a.AgentName, a.AgentCode, a.Address, a.Phone
                                     FROM Users u 
                                     JOIN Roles r ON u.RoleId = r.Id 
                                     JOIN Agents a ON u.AgentId = a.Id
@@ -203,16 +194,9 @@ namespace hrm.Respository.Users
             using var connection = _context.CreateConnection();
             const string userSql = @"
                                     SELECT 
-                                        u.Id,
-                                        u.UserName,
-                                        u.CreatedAt,
-                                        r.Id,
-                                        r.Name,
-                                        a.Id,
-                                        a.AgentName,
-                                        a.AgentCode,
-                                        a.Address,
-                                        a.Phone
+                                        u.Id, u.UserName, u.CreatedAt,
+                                        r.Id, r.Name,
+                                        a.Id, a.AgentName, a.AgentCode, a.Address, a.Phone
                                     FROM Users u 
                                     JOIN Roles r ON u.RoleId = r.Id 
                                     JOIN Agents a ON u.AgentId = a.Id
@@ -245,7 +229,7 @@ namespace hrm.Respository.Users
         public async Task<(string, bool)> ChangePassword(string newPassword, int userId)
         {
             using var connection = _context.CreateConnection();
-            string salt = _configuration["Cryptoraphy:Salt"];
+            string salt = _configuration["Cryptoraphy:Salt"]!;
             string hashedPassword = BCrypt.Net.BCrypt.HashPassword(newPassword + salt);
             const string sql = "UPDATE Users SET Password = @Password WHERE Id = @UserId";
             var rowsAffected = await connection.ExecuteAsync(sql, new { Password = hashedPassword, UserId = userId });
