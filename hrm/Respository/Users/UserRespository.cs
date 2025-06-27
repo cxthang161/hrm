@@ -143,10 +143,12 @@ namespace hrm.Respository.Users
         public async Task<(string, bool)> UpdateUser(int userId, UpdateUserDto userDto)
         {
             using var connection = _context.CreateConnection();
+            using var transaction = connection.BeginTransaction();
 
-            // Kiểm tra user tồn tại
+            // Kiểm tra user
             const string checkIdSql = "SELECT * FROM Users WHERE Id = @Id";
-            var existingUser = await connection.QueryFirstOrDefaultAsync<Entities.Users>(checkIdSql, new { Id = userId });
+            var existingUser = await connection.QueryFirstOrDefaultAsync<Entities.Users>(
+                checkIdSql, new { Id = userId }, transaction);
             if (existingUser == null)
             {
                 return ("User not exists", false);
@@ -154,40 +156,51 @@ namespace hrm.Respository.Users
 
             // Kiểm tra trùng username
             const string checkUserNameSql = "SELECT * FROM Users WHERE UserName = @UserName";
-            var existingUserByName = await connection.QueryFirstOrDefaultAsync<Entities.Users>(checkUserNameSql, new { UserName = userDto.UserName });
+            var existingUserByName = await connection.QueryFirstOrDefaultAsync<Entities.Users>(
+                checkUserNameSql, new { UserName = userDto.UserName }, transaction);
             if (existingUserByName != null && existingUserByName.Id != userId)
             {
                 return ("Username already exists", false);
             }
 
-            // Xử lý permissions
-            var permissionsCsv = userDto.Permissions != null
-                ? string.Join(",", userDto.Permissions)
-                : null;
-
-            // Thực hiện cập nhật
-            const string sql = @"
-                                UPDATE Users 
-                                SET UserName = @UserName, 
-                                    AgentId = @AgentId, 
-                                    Permissions = @Permissions
-                                WHERE Id = @UserId;";
-
-            var rowsAffected = await connection.ExecuteAsync(sql, new
+            // Cập nhật user
+            const string updateSql = @"
+                                    UPDATE Users 
+                                    SET UserName = @UserName, AgentId = @AgentId
+                                    WHERE Id = @UserId";
+            var rowsAffected = await connection.ExecuteAsync(updateSql, new
             {
                 UserName = userDto.UserName,
                 AgentId = userDto.AgentId,
-                UserId = userId,
-                Permissions = permissionsCsv
-            });
+                UserId = userId
+            }, transaction);
 
-            if (rowsAffected <= 0)
+            // Xóa tất cả permission cũ
+            const string deletePermissionSql = "DELETE FROM UserPermissions WHERE UserId = @UserId";
+            await connection.ExecuteAsync(deletePermissionSql, new { UserId = userId }, transaction);
+
+            // Thêm lại permissions mới
+            if (userDto.Permissions != null && userDto.Permissions.Count > 0)
             {
-                return ("Failed to update user", false);
+                const string insertSql = @"
+                                        INSERT INTO UserPermissions (UserId, PermissionId)
+                                        VALUES (@UserId, @PermissionId)";
+
+                foreach (var permissionId in userDto.Permissions)
+                {
+                    await connection.ExecuteAsync(insertSql, new
+                    {
+                        UserId = userId,
+                        PermissionId = permissionId
+                    }, transaction);
+                }
             }
+
+            transaction.Commit();
 
             return ("Updated user successfully", true);
         }
+
 
         public async Task<Entities.Users?> GetUserById(int userId)
         {

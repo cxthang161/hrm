@@ -22,9 +22,9 @@ namespace hrm.Controllers
             _aesCryptoProvider = aesCryptoProvider;
         }
 
-        [Authorize(Roles = "admin")]
+        //[Authorize(Roles = "admin")]
         [HttpPost("create")]
-        public async Task<IActionResult> CreateUser([FromBody] CreateUserDto request)
+        public async Task<IActionResult> Create([FromBody] CreateUserDto request)
         {
             var result = await _userRepository.CreateUser(request);
             return Ok(new BaseResponse<string>("", result.Item1, result.Item2));
@@ -45,7 +45,7 @@ namespace hrm.Controllers
 
         [Authorize(Roles = "admin")]
         [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto request)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateUserDto request)
         {
             var result = await _userRepository.UpdateUser(id, request);
             return Ok(new BaseResponse<string>("", result.Item1, result.Item2));

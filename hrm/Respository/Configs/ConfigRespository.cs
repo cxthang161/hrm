@@ -1,8 +1,8 @@
-﻿using System.Security.Cryptography;
-using Dapper;
+﻿using Dapper;
 using hrm.Context;
 using hrm.DTOs;
 using hrm.Providers;
+using System.Security.Cryptography;
 
 namespace hrm.Respository.Configs
 {

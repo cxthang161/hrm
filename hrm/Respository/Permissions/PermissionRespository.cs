@@ -22,7 +22,7 @@ namespace hrm.Respository.Permissions
         public async Task<(string, bool)> CreatePermission(PermissionDto permissionDto)
         {
             using var connection = _context.CreateConnection();
-            string existsSql = "SELECT Name, KeyName FROM Permissions WHERE Name = @Name OR Description = @Description";
+            string existsSql = "SELECT Name, Description FROM Permissions WHERE Name = @Name OR Description = @Description";
             var existingPermission = await connection.QueryFirstOrDefaultAsync<Entities.Permissions>(existsSql, new
             {
                 Name = permissionDto.Name,
@@ -30,7 +30,7 @@ namespace hrm.Respository.Permissions
             });
             if (existingPermission != null)
             {
-                return ("Permission with the same name or key already exists.", false);
+                return ("Permission already exists.", false);
             }
             string sql = "INSERT INTO Permissions (Name, Description) VALUES (@Name, @Description)";
             var result = await connection.ExecuteAsync(sql, new
@@ -44,7 +44,7 @@ namespace hrm.Respository.Permissions
         public async Task<(string, bool)> UpdatePermission(int id, PermissionDto permissionDto)
         {
             using var connection = _context.CreateConnection();
-            string existsSql = "SELECT Name, KeyName FROM Permissions WHERE Name = @Name OR Description = @Description";
+            string existsSql = "SELECT Name, Description FROM Permissions WHERE Name = @Name OR Description = @Description";
             var existingPermission = await connection.QueryFirstOrDefaultAsync<Entities.Permissions>(existsSql, new
             {
                 Name = permissionDto.Name,

@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public required string ProductKey { get; set; }
-        public required string ConfigUrl { get; set; } = string.Empty;
+        public string ConfigUrl { get; set; } = string.Empty;
         public string LogoUrl { get; set; } = string.Empty;
         public string BackgroundUrl { get; set; } = string.Empty;
         public string NameTemplate { get; set; } = string.Empty;

@@ -22,6 +22,18 @@ namespace hrm.Respository.Agents
         public async Task<(string, bool)> CreateAgent(AgentDto agent)
         {
             using var connection = _context.CreateConnection();
+
+            const string checkSql = "SELECT Id FROM Agents WHERE AgentCode = @AgentCode";
+            var existingAgent = await connection.QueryFirstOrDefaultAsync<int?>(checkSql, new
+            {
+                AgentCode = agent.AgentCode,
+            });
+
+            if (existingAgent != null)
+            {
+                return ("Agent code already exists", false);
+            }
+
             string sql = "INSERT INTO Agents (AgentName, AgentCode, Address, Phone) VALUES (@AgentName, @AgentCode, @Address, @Phone)";
             var resutl = await connection.ExecuteAsync(sql, new
             {
@@ -47,15 +59,14 @@ namespace hrm.Respository.Agents
             }
             return ("Delete agent successfully", true);
         }
-        public async Task<(string, bool)> UpdateAgent(int agentId, AgentDto agent)
+        public async Task<(string, bool)> UpdateAgent(int agentId, UpdateAgentDto agent)
         {
             using var connection = _context.CreateConnection();
-            string sql = "UPDATE Agents SET AgentName = @AgentName, AgentCode = @AgentCode, Address = @Address, Phone = @Phone WHERE Id = @Id";
+            string sql = "UPDATE Agents SET AgentName = @AgentName, Address = @Address, Phone = @Phone WHERE Id = @Id";
             var result = await connection.ExecuteAsync(sql, new
             {
                 Id = agentId,
                 AgentName = agent.AgentName,
-                AgentCode = agent.AgentCode,
                 Address = agent.Address,
                 Phone = agent.Phone
             });
