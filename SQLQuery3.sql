@@ -33,7 +33,7 @@ insert into Users (UserName, Password, RoleId, AgentId) values ('user1', 'user12
 create table Configs(
 	Id int identity(1,1) not null primary key,
 	AgentId int not null foreign key references Agents(Id),
-	ProductKey nvarchar(100) not null unique,
+	ProductUrl nvarchar(100) not null unique,
 	ConfigValue nvarchar(max) not null,
 	LogoUrl nvarchar(max) not null,
 	BackgroundUrl nvarchar(max) not null,
