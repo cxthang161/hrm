@@ -1,5 +1,4 @@
-﻿
-create table Roles(
+﻿create table Roles(
 	Id int identity(1,1) not null primary key,
 	Name nvarchar(50) not null
 )
@@ -33,8 +32,8 @@ insert into Users (UserName, Password, RoleId, AgentId) values ('user1', 'user12
 create table Configs(
 	Id int identity(1,1) not null primary key,
 	AgentId int not null foreign key references Agents(Id),
-	ProductUrl nvarchar(100) not null unique,
-	ConfigValue nvarchar(max) not null,
+	ProductKey nvarchar(100) not null unique,
+	ConfigUrl nvarchar(max) not null,
 	LogoUrl nvarchar(max) not null,
 	BackgroundUrl nvarchar(max) not null,
 	NameTemplate nvarchar(200) not null,
