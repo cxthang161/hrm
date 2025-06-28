@@ -14,7 +14,7 @@ namespace hrm.Controllers
             _roleRepository = roleRepository;
         }
 
-        [HttpGet("get-all")]
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var roles = await _roleRepository.GetAll();

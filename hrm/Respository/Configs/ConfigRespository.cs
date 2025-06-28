@@ -1,8 +1,8 @@
-﻿using Dapper;
+﻿using System.Security.Cryptography;
+using Dapper;
 using hrm.Context;
 using hrm.DTOs;
 using hrm.Providers;
-using System.Security.Cryptography;
 
 namespace hrm.Respository.Configs
 {
@@ -138,7 +138,7 @@ namespace hrm.Respository.Configs
         }
 
 
-        public async Task<Entities.Configs?> GetConfigById(int id)
+        public async Task<ConfigInfoDto?> GetConfigById(int id)
         {
             using var connection = _context.CreateConnection();
 
@@ -148,12 +148,12 @@ namespace hrm.Respository.Configs
                    JOIN Users u ON c.UpdatedBy = u.Id
                    WHERE c.Id = @Id";
 
-            var result = await connection.QueryAsync<Entities.Configs, Entities.Agents, Entities.Users, Entities.Configs>(
+            var result = await connection.QueryAsync<ConfigInfoDto, Entities.Agents, InfoUserDto, ConfigInfoDto>(
                 sql,
                 (config, agent, user) =>
                 {
                     config.AgentInfo = agent;
-                    config.UpdatedByUser = user;
+                    config.UpdatedBy = user.UserName;
                     return config;
                 },
                 new { Id = id },
@@ -163,24 +163,24 @@ namespace hrm.Respository.Configs
             return result.FirstOrDefault();
         }
 
-        public async Task<(IEnumerable<Entities.Configs>, int)> GetAllConfigs(int pageIndex, int pageSize)
+        public async Task<(IEnumerable<ConfigInfoDto>, int)> GetAllConfigs(int pageIndex, int pageSize)
         {
             using var connection = _context.CreateConnection();
             string sql = @"SELECT 
-                            c.Id, c.ProductKey, c.ConfigValue, c.LogoUrl, c.BackgroundUrl, c.NameTemplate, c.UpdatedAt, c.AgentId, c.UpdatedBy,
+                            c.Id, c.ProductKey, c.ConfigUrl, c.LogoUrl, c.BackgroundUrl, c.NameTemplate, c.UpdatedAt, c.AgentId, c.UpdatedBy,
                             a.Id, a.AgentName, a.AgentCode, a.Address, a.Phone,
-                            u.Id, u.UserName, u.Password, u.CreatedAt, u.RoleId, u.AgentId
+                            u.Id, u.UserName
                         FROM Configs c
                         JOIN Agents a ON c.AgentId = a.Id
                         JOIN Users u ON c.UpdatedBy = u.Id
                         ORDER BY c.UpdatedAt DESC
                         OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;";
-            var result = await connection.QueryAsync<Entities.Configs, Entities.Agents, Entities.Users, Entities.Configs>(
+            var result = await connection.QueryAsync<ConfigInfoDto, Entities.Agents, InfoUserDto, ConfigInfoDto>(
                 sql,
                 (config, agent, user) =>
                 {
                     config.AgentInfo = agent;
-                    config.UpdatedByUser = user;
+                    config.UpdatedBy = user.UserName;
                     return config;
                 },
                 new

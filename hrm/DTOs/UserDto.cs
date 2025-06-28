@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using hrm.Entities;
+﻿using hrm.Entities;
 
 namespace hrm.DTOs
 {
@@ -35,7 +34,12 @@ namespace hrm.DTOs
 
     public class ChangePasswordDto
     {
-        [MinLength(8, ErrorMessage = "Password must be at least 8 characters long")]
         public required string Password { get; set; }
+    }
+
+    public class InfoUserDto
+    {
+        public int Id { get; set; }
+        public string? UserName { get; set; }
     }
 }

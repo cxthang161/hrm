@@ -76,6 +76,26 @@ namespace hrm.Respository.Auth
 
             var accessToken = _tokenProvider.CreateToken(fullUser!);
             var refreshToken = await _refreshTokenProvider.CreateRefreshToken(accessToken);
+            const string upsertTokenSql = @"
+                                            IF EXISTS (SELECT 1 FROM RefreshTokens WHERE UserId = @UserId)
+                                            BEGIN
+                                                UPDATE RefreshTokens 
+                                                SET Token = @Token, ExpiresAt = @ExpiresAt, CreatedAt = @CreatedAt
+                                                WHERE UserId = @UserId
+                                            END
+                                            ELSE
+                                            BEGIN
+                                                INSERT INTO RefreshTokens (UserId, Token, ExpiresAt, CreatedAt)
+                                                VALUES (@UserId, @Token, @ExpiresAt, @CreatedAt)
+                                            END";
+
+            await connection.ExecuteAsync(upsertTokenSql, new
+            {
+                UserId = foundUser.Id,
+                Token = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                CreatedAt = DateTime.UtcNow
+            });
 
             return (fullUser, accessToken, refreshToken);
         }

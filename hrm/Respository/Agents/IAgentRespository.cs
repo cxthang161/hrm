@@ -7,6 +7,6 @@ namespace hrm.Respository.Agents
         public Task<IEnumerable<Entities.Agents>> GetAllAgents();
         public Task<(string, bool)> CreateAgent(AgentDto agent);
         public Task<(string, bool)> DeleteAgent(int agentId);
-        public Task<(string, bool)> UpdateAgent(int agentId, AgentDto agent);
+        public Task<(string, bool)> UpdateAgent(int agentId, UpdateAgentDto agent);
     }
 }

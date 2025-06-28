@@ -23,6 +23,7 @@ create table Users (
 	Password nvarchar(100) not null,
 	RoleId int not null foreign key references Roles(Id),
 	AgentId int not null foreign key references Agents(Id),
+	Salt nvarchar(50) not null,
 	CreatedAt Datetime default getDate()
 )
 

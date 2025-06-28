@@ -23,7 +23,7 @@ namespace hrm.Controllers
         }
 
         //[Authorize(Roles = "admin")]
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateUserDto request)
         {
             var result = await _userRepository.CreateUser(request);
@@ -31,7 +31,7 @@ namespace hrm.Controllers
         }
 
         [Authorize(Roles = "admin")]
-        [HttpDelete("delete/{id}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
             if (id <= 0)
@@ -44,7 +44,7 @@ namespace hrm.Controllers
         }
 
         [Authorize(Roles = "admin")]
-        [HttpPut("update/{id}")]
+        [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateUserDto request)
         {
             var result = await _userRepository.UpdateUser(id, request);
@@ -52,7 +52,7 @@ namespace hrm.Controllers
         }
 
         [Authorize(Roles = "admin")]
-        [HttpGet("get-all")]
+        [HttpGet]
         public async Task<IActionResult> GetAllUsers([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
         {
             var (users, totalRows) = await _userRepository.GetAll(pageIndex, pageSize);
@@ -81,7 +81,7 @@ namespace hrm.Controllers
         }
 
         [Authorize(Roles = "admin")]
-        [HttpGet("get-by-id/{id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetUserById(int id)
         {
             var user = await _userRepository.GetUserById(id);
@@ -109,7 +109,7 @@ namespace hrm.Controllers
         }
 
         [Authorize(Roles = "admin")]
-        [HttpPost("change-password/{id}")]
+        [HttpPut("change-password/{id}")]
         public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordDto request)
         {
             if (string.IsNullOrEmpty(request.Password))

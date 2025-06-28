@@ -28,7 +28,8 @@ namespace hrm.Providers
             {
                 var imageParams = new ImageUploadParams
                 {
-                    File = new FileDescription(file.FileName, file.OpenReadStream())
+                    File = new FileDescription(file.FileName, file.OpenReadStream()),
+                    Folder = "hrm/images"
                 };
                 uploadResult = await _cloudinary.UploadAsync(imageParams);
             }
@@ -36,7 +37,8 @@ namespace hrm.Providers
             {
                 var rawParams = new RawUploadParams
                 {
-                    File = new FileDescription(file.FileName, file.OpenReadStream())
+                    File = new FileDescription(file.FileName, file.OpenReadStream()),
+                    Folder = "hrm/files"
                 };
                 uploadResult = await _cloudinary.UploadAsync(rawParams);
             }

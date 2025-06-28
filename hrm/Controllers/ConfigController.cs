@@ -20,7 +20,7 @@ namespace hrm.Controllers
         }
 
         [Authorize(Policy = "Permission:create_config")]
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> CreateConfig([FromForm] ConfigDto configDto)
         {
             if (!ModelState.IsValid)
@@ -42,7 +42,7 @@ namespace hrm.Controllers
         }
 
         [Authorize(Policy = "Permission:edit_config")]
-        [HttpPost("update/{id}")]
+        [HttpPut("{id}")]
         public async Task<IActionResult> UpdateConfig([FromForm] ConfigUpdateDto configDto, int id)
         {
             if (!ModelState.IsValid)
@@ -66,7 +66,7 @@ namespace hrm.Controllers
         }
 
         [Authorize(Policy = "Permission:get_config")]
-        [HttpPost("get-by-id/{id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetConfigById(int id)
         {
             var config = await _configRespository.GetConfigById(id);
@@ -74,11 +74,11 @@ namespace hrm.Controllers
             {
                 return NotFound("Configuration not found.");
             }
-            return Ok(new BaseResponse<Entities.Configs>(config, "Success", true));
+            return Ok(new BaseResponse<ConfigInfoDto>(config, "Success", true));
         }
 
         [Authorize(Policy = "Permission:getAll_config")]
-        [HttpGet("get-all")]
+        [HttpGet]
         public async Task<IActionResult> GetAllConfigs([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
         {
             var (configs, totalRows) = await _configRespository.GetAllConfigs(pageIndex, pageSize);
@@ -86,12 +86,12 @@ namespace hrm.Controllers
             {
                 return NotFound("No configurations found.");
             }
-            var pagination = new PaginationResponse<Entities.Configs>(
+            var pagination = new PaginationResponse<ConfigInfoDto>(
                 configs,
                 pageIndex,
                 (int)Math.Ceiling((double)totalRows / pageSize)
             );
-            return Ok(new BaseResponse<PaginationResponse<Entities.Configs>>(pagination, "Success", true));
+            return Ok(new BaseResponse<PaginationResponse<ConfigInfoDto>>(pagination, "Success", true));
         }
     }
 }

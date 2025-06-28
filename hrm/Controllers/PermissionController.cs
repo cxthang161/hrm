@@ -17,7 +17,7 @@ namespace hrm.Controllers
             _permissionRespository = permissionRespository;
         }
 
-        [HttpGet("get-all")]
+        [HttpGet]
         public async Task<IActionResult> GetAllPermissions()
         {
             var permissions = await _permissionRespository.GetAllPermissions();
@@ -29,7 +29,7 @@ namespace hrm.Controllers
         }
 
         [Authorize(Roles = "admin")]
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> CreatePermission([FromBody] PermissionDto permissionDto)
         {
             if (!ModelState.IsValid)
@@ -47,7 +47,7 @@ namespace hrm.Controllers
         }
 
         [Authorize(Roles = "admin")]
-        [HttpPost("update/{id}")]
+        [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePermission([FromBody] PermissionDto permissionDto, int id)
         {
             if (!ModelState.IsValid)

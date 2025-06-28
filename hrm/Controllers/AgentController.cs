@@ -18,7 +18,7 @@ namespace hrm.Controllers
             _agentRespository = agentRespository;
         }
 
-        [HttpGet("get-all")]
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var agents = await _agentRespository.GetAllAgents();
@@ -30,7 +30,7 @@ namespace hrm.Controllers
             return Ok(new BaseResponse<IEnumerable<Entities.Agents>>(agents, "Success!", true));
         }
 
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> CreateAgent([FromBody] AgentDto agent)
         {
             var (message, success) = await _agentRespository.CreateAgent(agent);
@@ -42,10 +42,10 @@ namespace hrm.Controllers
             return Ok(new BaseResponse<string>(null, message, true));
         }
 
-        [HttpDelete("delete/{agentId}")]
-        public async Task<IActionResult> DeleteAgent(int agentId)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAgent(int id)
         {
-            var (message, success) = await _agentRespository.DeleteAgent(agentId);
+            var (message, success) = await _agentRespository.DeleteAgent(id);
             if (!success)
             {
                 return BadRequest(new BaseResponse<string>(null, message, false));
@@ -54,11 +54,9 @@ namespace hrm.Controllers
             return Ok(new BaseResponse<string>(null, message, true));
         }
 
-        [HttpPut("update/{agentId}")]
-        public async Task<IActionResult> UpdateAgent(int agentId, [FromBody] AgentDto agent)
+        [HttpPut]
+        public async Task<IActionResult> UpdateAgent(int agentId, [FromBody] UpdateAgentDto agent)
         {
-            // Không cần kiểm tra agent == null
-
             var (message, success) = await _agentRespository.UpdateAgent(agentId, agent);
             if (!success)
             {

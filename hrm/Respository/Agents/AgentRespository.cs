@@ -59,16 +59,16 @@ namespace hrm.Respository.Agents
             }
             return ("Delete agent successfully", true);
         }
-        public async Task<(string, bool)> UpdateAgent(int agentId, UpdateAgentDto agent)
+        public async Task<(string, bool)> UpdateAgent(int agentId, UpdateAgentDto agentDto)
         {
             using var connection = _context.CreateConnection();
             string sql = "UPDATE Agents SET AgentName = @AgentName, Address = @Address, Phone = @Phone WHERE Id = @Id";
             var result = await connection.ExecuteAsync(sql, new
             {
                 Id = agentId,
-                AgentName = agent.AgentName,
-                Address = agent.Address,
-                Phone = agent.Phone
+                AgentName = agentDto.AgentName,
+                Address = agentDto.Address,
+                Phone = agentDto.Phone
             });
             if (result <= 0)
             {
