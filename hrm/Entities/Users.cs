@@ -6,6 +6,7 @@
         public required string UserName { get; set; }
         public required string Password { get; set; }
         public string Permissions { get; set; } = string.Empty;
+        public string Salt { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
 
         public required int RoleId { get; set; }

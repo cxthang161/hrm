@@ -61,7 +61,7 @@ public class AuthController : ControllerBase
 
         if (userInfo is not (Users user, string accessToken, string refreshToken))
         {
-            return Unauthorized("Invalid username or password");
+            return BadRequest("Invalid username or password");
         }
 
         string? permissions = user.Permissions != null

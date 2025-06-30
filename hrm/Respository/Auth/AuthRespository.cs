@@ -24,13 +24,18 @@ namespace hrm.Respository.Auth
         public async Task<(Entities.Users, string, string)?> AuthLogin(UserLoginDto user)
         {
             using var connection = _context.CreateConnection();
-            string sql = "SELECT * FROM Users WHERE UserName = @UserName";
+            string sql = "SELECT UserName, PassWord, Salt FROM Users WHERE UserName = @UserName";
 
             var foundUser = await connection.QueryFirstOrDefaultAsync<Entities.Users>(sql, new
             {
                 UserName = user.UserName
             });
-            string salt = _configuration["Cryptoraphy:Salt"]!;
+            const string saltSql = "SELECT Salt FROM Users WHERE Id = @UserId";
+            var salt = await connection.QueryFirstOrDefaultAsync<string>(saltSql, new { UserId = foundUser?.Id });
+            if (string.IsNullOrEmpty(salt))
+            {
+                return null;
+            }
             string passwordWithSalt = user.Password + salt;
 
 

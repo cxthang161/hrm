@@ -27,8 +27,8 @@ create table Users (
 	CreatedAt Datetime default getDate()
 )
 
-insert into Users (UserName, Password, RoleId, AgentId) values ('admin', 'admin123', 1, 1)
-insert into Users (UserName, Password, RoleId, AgentId) values ('user1', 'user123', 2, 1)
+insert into Users (UserName, Password, RoleId, AgentId) values ('admin', 'admin123', 1, 1, 'acbasd123')
+insert into Users (UserName, Password, RoleId, AgentId) values ('user1', 'user123', 2, 1, 'acbasd123')
 
 create table Configs(
 	Id int identity(1,1) not null primary key,

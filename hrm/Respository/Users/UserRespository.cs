@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using System.Security.Cryptography;
+using Dapper;
 using hrm.Context;
 using hrm.DTOs;
 
@@ -18,7 +19,11 @@ namespace hrm.Respository.Users
         public async Task<(string, bool)> CreateUser(CreateUserDto userDto)
         {
             using var connection = _context.CreateConnection();
-            string salt = _configuration["Cryptoraphy:Salt"]!;
+            var randomBytes = new byte[16];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+            var salt = Convert.ToBase64String(randomBytes);
+
             string password = userDto.Password + salt;
 
             var hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
@@ -33,8 +38,8 @@ namespace hrm.Respository.Users
             }
 
             const string sql = @"
-                                INSERT INTO Users (UserName, Password, RoleId, AgentId)
-                                VALUES (@UserName, @Password, 2, @AgentId);
+                                INSERT INTO Users (UserName, Password, RoleId, AgentId, Salt)
+                                VALUES (@UserName, @Password, 1, @AgentId, @Salt);
                                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             var userId = await connection.ExecuteScalarAsync<int>(sql, new
@@ -42,6 +47,7 @@ namespace hrm.Respository.Users
                 UserName = userDto.UserName,
                 Password = hashedPassword,
                 AgentId = userDto.AgentId,
+                Salt = salt
             });
 
 
@@ -139,7 +145,6 @@ namespace hrm.Respository.Users
             return (users, totalRows);
         }
 
-
         public async Task<(string, bool)> UpdateUser(int userId, UpdateUserDto userDto)
         {
             using var connection = _context.CreateConnection();
@@ -201,7 +206,6 @@ namespace hrm.Respository.Users
             return ("Updated user successfully", true);
         }
 
-
         public async Task<Entities.Users?> GetUserById(int userId)
         {
             using var connection = _context.CreateConnection();
@@ -239,10 +243,16 @@ namespace hrm.Respository.Users
             return result.FirstOrDefault();
 
         }
+
         public async Task<(string, bool)> ChangePassword(string newPassword, int userId)
         {
             using var connection = _context.CreateConnection();
-            string salt = _configuration["Cryptoraphy:Salt"]!;
+            const string saltSql = "SELECT Salt FROM Users WHERE Id = @UserId";
+            var salt = await connection.QueryFirstOrDefaultAsync<string>(saltSql, new { UserId = userId });
+            if (string.IsNullOrEmpty(salt))
+            {
+                return ("User not found", false);
+            }
             string hashedPassword = BCrypt.Net.BCrypt.HashPassword(newPassword + salt);
             const string sql = "UPDATE Users SET Password = @Password WHERE Id = @UserId";
             var rowsAffected = await connection.ExecuteAsync(sql, new { Password = hashedPassword, UserId = userId });
